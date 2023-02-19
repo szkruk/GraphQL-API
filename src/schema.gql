@@ -2,12 +2,34 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Ticker {
+  name: String!
+  fullName: String!
+}
+
 type Quote {
+  timestamp: Int!
+  price: Float!
+  name: String!
+}
+
+type Query {
+  quotes: [Quote!]!
+  tickers: [Ticker!]!
+}
+
+type Mutation {
+  createQuote(createQuoteInput: CreateQuoteInput!): Quote!
+  createTicker(createTickerInput: CreateTickerInput!): Ticker!
+}
+
+input CreateQuoteInput {
   name: String!
   timestamp: Int!
   price: Float!
 }
 
-type Query {
-  quotes: [Quote!]!
+input CreateTickerInput {
+  name: String!
+  fullName: String!
 }
