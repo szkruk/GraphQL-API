@@ -10,7 +10,9 @@ export class QuoteEntity {
   price: number;
 
   @PrimaryColumn()
-  @ManyToOne(() => TickerEntity, (ticker) => ticker.name)
+  @ManyToOne(() => TickerEntity, (ticker) => ticker.name, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'name' })
   name: string;
 }

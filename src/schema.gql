@@ -26,7 +26,11 @@ type Query {
 
 type Mutation {
   createQuote(createQuoteInput: CreateQuoteInput!): QuoteModel!
+  deleteQuote(name: String!, timestamp: Int!): QuoteModel!
+  editQuote(createQuoteInput: CreateQuoteInput!): QuoteModel!
   createTicker(createTickerInput: CreateTickerInput!): TickerModel!
+  deleteTicker(name: String!): TickerModel!
+  editTicker(editTicker: CreateTickerInput!): TickerModel!
 }
 
 input CreateQuoteInput {

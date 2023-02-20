@@ -13,26 +13,41 @@ export class TickersService {
   ) {}
 
   async findAll(): Promise<TickerModel[]> {
-    return this.tickersRepository.find();
+    return await this.tickersRepository.find();
   }
 
   async create(createTickerInput: CreateTickerInput): Promise<TickerModel> {
     const newTicker = this.tickersRepository.create(createTickerInput);
-    return this.tickersRepository.save(newTicker);
+    return await this.tickersRepository.save(newTicker);
   }
 
   async findOne(name: string): Promise<TickerModel> {
-    return this.tickersRepository.findOneByOrFail({ name: name });
+    return await this.tickersRepository.findOneByOrFail({ name: name });
   }
-  // findOne(id: number) {
-  //   return `This action returns a #${id} ticker`;
-  // }
 
-  // update(id: number, updateTickerInput: UpdateTickerInput) {
-  //   return `This action updates a #${id} ticker`;
-  // }
+  async deleteTicker(name: string): Promise<TickerModel> {
+    const Ticker = await this.tickersRepository.findOne({
+      where: {
+        name: name,
+      },
+    });
+    await this.tickersRepository.delete(Ticker);
+    return Ticker;
+  }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} ticker`;
-  // }
+  async editTicker(createTickerInput: CreateTickerInput): Promise<TickerModel> {
+    await this.tickersRepository.update(
+      {
+        name: createTickerInput.name,
+      },
+      { ...createTickerInput },
+    );
+
+    const Ticker = await this.tickersRepository.findOne({
+      where: {
+        name: createTickerInput.name,
+      },
+    });
+    return Ticker;
+  }
 }

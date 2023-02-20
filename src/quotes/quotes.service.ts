@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm/dist/common';
-import { TickerEntity } from 'src/tickers/entities/ticker.entity';
 import { TickerModel } from 'src/tickers/model/ticker.model';
 import { TickersService } from 'src/tickers/tickers.service';
 import { Repository } from 'typeorm/repository/Repository';
@@ -26,6 +25,10 @@ export class QuotesService {
     });
   }
 
+  async findAllByTimeStamp(timestamp: number): Promise<QuoteModel[]> {
+    return this.quotesRepository.findBy({});
+  }
+
   async findAllByName(name: string): Promise<QuoteModel[]> {
     return this.quotesRepository.findBy({
       name: name,
@@ -36,8 +39,50 @@ export class QuotesService {
     return this.tickersService.findOne(name);
   }
 
+  // TODO!!!!   Wziąć przypadek istniejącego rekordu (duplikowanie)
   async createQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
+    try {
+      const temp = await this.tickersService.findOne(createQuoteInput.name);
+    } catch (EntityNotFoundError) {
+      await this.tickersService.create({
+        name: createQuoteInput.name,
+        fullName: 'unknown',
+      });
+      const newQuote = this.quotesRepository.create(createQuoteInput);
+      return this.quotesRepository.save(newQuote);
+    }
+
     const newQuote = this.quotesRepository.create(createQuoteInput);
     return this.quotesRepository.save(newQuote);
+  }
+
+  async editQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
+    await this.quotesRepository.update(
+      {
+        name: createQuoteInput.name,
+        timestamp: createQuoteInput.timestamp,
+      },
+      { ...createQuoteInput },
+    );
+
+    const Quote = await this.quotesRepository.findOne({
+      where: {
+        name: createQuoteInput.name,
+        timestamp: createQuoteInput.timestamp,
+      },
+    });
+    return Quote;
+  }
+
+  async deleteQuote(name: string, timestamp: number): Promise<QuoteModel> {
+    const Quote = await this.quotesRepository.findOne({
+      where: {
+        name: name,
+        timestamp: timestamp,
+      },
+    });
+    await this.quotesRepository.delete(Quote);
+
+    return Quote;
   }
 }

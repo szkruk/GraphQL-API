@@ -11,19 +11,31 @@ export class TickersResolver {
   @Mutation(() => TickerModel)
   async createTicker(
     @Args('createTickerInput') createTickerInput: CreateTickerInput,
-  ) {
-    return this.tickersService.create(createTickerInput);
+  ): Promise<TickerModel> {
+    return await this.tickersService.create(createTickerInput);
+  }
+
+  @Mutation(() => TickerModel)
+  async deleteTicker(@Args('name') name: string): Promise<TickerModel> {
+    return await this.tickersService.deleteTicker(name);
+  }
+
+  @Mutation(() => TickerModel)
+  async editTicker(
+    @Args('editTicker') createTickerInput: CreateTickerInput,
+  ): Promise<TickerModel> {
+    return await this.tickersService.editTicker(createTickerInput);
   }
 
   @Query(() => [TickerModel], { name: 'tickers' })
-  async findAll() {
-    return this.tickersService.findAll();
+  async findAll(): Promise<TickerModel[]> {
+    return await this.tickersService.findAll();
   }
 
   @Query(() => TickerModel, { name: 'ticker' })
   async findOne(
     @Args('name', { type: () => String }) name: string,
   ): Promise<TickerModel> {
-    return this.tickersService.findOne(name);
+    return await this.tickersService.findOne(name);
   }
 }

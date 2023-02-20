@@ -1,4 +1,4 @@
-import { Field, Float, InputType } from '@nestjs/graphql';
+import { Field, Float, InputType, Int } from '@nestjs/graphql';
 import {
   IsAlpha,
   IsInt,
@@ -9,7 +9,6 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { Int } from 'type-graphql';
 
 @InputType()
 export class CreateQuoteInput {

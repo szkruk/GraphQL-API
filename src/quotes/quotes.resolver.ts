@@ -3,11 +3,11 @@ import {
   Mutation,
   Parent,
   Query,
+  Int,
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
 import { TickerModel } from 'src/tickers/model/ticker.model';
-import { Int } from 'type-graphql';
 import { CreateQuoteInput } from './dto/create-quote.input';
 
 import { QuoteModel } from './model/quote.model';
@@ -47,5 +47,20 @@ export class QuotesResolver {
     @Args('createQuoteInput') createQuoteInput: CreateQuoteInput,
   ): Promise<QuoteModel> {
     return this.quotesService.createQuote(createQuoteInput);
+  }
+
+  @Mutation((returns) => QuoteModel)
+  async deleteQuote(
+    @Args('name', { type: () => String }) name: string,
+    @Args('timestamp', { type: () => Int }) timestamp: number,
+  ): Promise<QuoteModel> {
+    return this.quotesService.deleteQuote(name, timestamp);
+  }
+
+  @Mutation((returns) => QuoteModel)
+  async editQuote(
+    @Args('createQuoteInput') createQuoteInput: CreateQuoteInput,
+  ): Promise<QuoteModel> {
+    return this.quotesService.editQuote(createQuoteInput);
   }
 }
