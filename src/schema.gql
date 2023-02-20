@@ -2,25 +2,31 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Ticker {
+"""Ticker Model"""
+type TickerModel {
   name: String!
   fullName: String!
 }
 
-type Quote {
+"""Quote Model"""
+type QuoteModel {
+  name: String!
   timestamp: Int!
   price: Float!
-  name: String!
+  ticker: TickerModel!
 }
 
 type Query {
-  quotes: [Quote!]!
-  tickers: [Ticker!]!
+  quotes: [QuoteModel!]!
+  quote(name: String!, timestamp: Int!): QuoteModel!
+  quoteByName(name: String!): [QuoteModel!]!
+  tickers: [TickerModel!]!
+  ticker(name: String!): TickerModel!
 }
 
 type Mutation {
-  createQuote(createQuoteInput: CreateQuoteInput!): Quote!
-  createTicker(createTickerInput: CreateTickerInput!): Ticker!
+  createQuote(createQuoteInput: CreateQuoteInput!): QuoteModel!
+  createTicker(createTickerInput: CreateTickerInput!): TickerModel!
 }
 
 input CreateQuoteInput {

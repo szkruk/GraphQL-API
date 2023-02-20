@@ -1,9 +1,10 @@
 import { InputType, Int, Field } from '@nestjs/graphql';
-import { IsAlpha, IsNotEmpty } from 'class-validator';
+import { IsAlpha, IsNotEmpty, IsUppercase, Length } from 'class-validator';
 
 @InputType()
 export class CreateTickerInput {
-  @IsNotEmpty()
+  @IsUppercase()
+  @Length(2, 6)
   @IsAlpha()
   @Field()
   name: string;

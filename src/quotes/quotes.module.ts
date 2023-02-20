@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { QuotesService } from './quotes.service';
 import { QuotesResolver } from './quotes.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm/dist';
-import { Quote } from './entities/quote.entity';
+import { QuoteEntity } from './entities/quote.entity';
+import { TickersModule } from 'src/tickers/tickers.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Quote])],
+  imports: [TypeOrmModule.forFeature([QuoteEntity]), TickersModule],
   providers: [QuotesService, QuotesResolver],
 })
 export class QuotesModule {}
