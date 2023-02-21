@@ -3,13 +3,13 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 
 @Entity('Quote')
 export class QuoteEntity {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'int' })
   timestamp: number;
 
-  @Column()
+  @Column({ type: 'numeric' })
   price: number;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'varchar', length: 6 })
   @ManyToOne(() => TickerEntity, (ticker) => ticker.name, {
     onDelete: 'CASCADE',
   })

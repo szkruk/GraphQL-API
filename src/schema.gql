@@ -19,8 +19,8 @@ type QuoteModel {
 type Query {
   quotes: [QuoteModel!]!
   quote(name: String!, timestamp: Int!): QuoteModel!
-  quoteByName(name: String!): [QuoteModel!]!
-  quoteByTimestamp(timestamp: Int!): [QuoteModel!]!
+  quotesByName(name: String!): [QuoteModel!]!
+  quotesByTimestamp(timestamp: Int!): [QuoteModel!]!
   tickers: [TickerModel!]!
   ticker(name: String!): TickerModel!
 }
@@ -31,7 +31,7 @@ type Mutation {
   editQuote(createQuoteInput: CreateQuoteInput!): QuoteModel!
   createTicker(createTickerInput: CreateTickerInput!): TickerModel!
   deleteTicker(name: String!): TickerModel!
-  editTicker(editTicker: CreateTickerInput!): TickerModel!
+  editTicker(createTickerInput: CreateTickerInput!): TickerModel!
 }
 
 input CreateQuoteInput {

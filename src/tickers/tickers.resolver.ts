@@ -22,7 +22,7 @@ export class TickersResolver {
 
   @Mutation(() => TickerModel)
   async editTicker(
-    @Args('editTicker') createTickerInput: CreateTickerInput,
+    @Args('createTickerInput') createTickerInput: CreateTickerInput,
   ): Promise<TickerModel> {
     return await this.tickersService.editTicker(createTickerInput);
   }

@@ -30,14 +30,14 @@ export class QuotesResolver {
     return this.quotesService.findOne(name, timestamp);
   }
 
-  @Query((returns) => [QuoteModel], { name: 'quoteByName' })
+  @Query((returns) => [QuoteModel], { name: 'quotesByName' })
   async findAllQuotesByName(
     @Args('name', { type: () => String }) name: string,
   ): Promise<QuoteModel[]> {
     return this.quotesService.findAllByName(name);
   }
 
-  @Query((returns) => [QuoteModel], { name: 'quoteByTimestamp' })
+  @Query((returns) => [QuoteModel], { name: 'quotesByTimestamp' })
   async findAllQuotesByTimestamp(
     @Args('timestamp', { type: () => Int }) timestamp: number,
   ): Promise<QuoteModel[]> {
