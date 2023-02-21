@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm/dist/common';
+import { NotFoundError } from 'rxjs';
 import { TickerModel } from 'src/tickers/model/ticker.model';
 import { TickersService } from 'src/tickers/tickers.service';
+import { DataSource } from 'typeorm';
 import { Repository } from 'typeorm/repository/Repository';
 import { CreateQuoteInput } from './dto/create-quote.input';
 import { QuoteEntity } from './entities/quote.entity';
@@ -14,29 +16,71 @@ export class QuotesService {
     private quotesRepository: Repository<QuoteEntity>,
     private tickersService: TickersService,
   ) {}
+
   async findAll(): Promise<QuoteModel[]> {
-    return this.quotesRepository.find();
+    try {
+      const Quotes = await this.quotesRepository.find();
+      return Quotes;
+    } catch (error) {
+      throw new NotImplementedException('Coś nie tak', {
+        cause: new Error(),
+        description: 'Jakis blad',
+      });
+    }
   }
 
   async findOne(name: string, timestamp: number): Promise<QuoteModel> {
-    return this.quotesRepository.findOneByOrFail({
-      name: name,
-      timestamp: timestamp,
-    });
+    try {
+      const Quote: QuoteModel = await this.quotesRepository.findOneByOrFail({
+        name: name,
+        timestamp: timestamp,
+      });
+      return Quote;
+    } catch (error) {
+      throw new NotImplementedException('Value not founded', {
+        cause: new Error(),
+        description: 'There are not qoutes with this name and timestamp',
+      });
+    }
   }
 
   async findAllByTimeStamp(timestamp: number): Promise<QuoteModel[]> {
-    return this.quotesRepository.findBy({});
+    try {
+      const quotes: QuoteModel[] = await this.quotesRepository.findBy({
+        timestamp: timestamp,
+      });
+      return quotes;
+    } catch (error) {
+      throw new NotImplementedException('Value not founded', {
+        cause: new Error(),
+        description: 'There are not any qoutes with this timestamp',
+      });
+    }
   }
 
   async findAllByName(name: string): Promise<QuoteModel[]> {
-    return this.quotesRepository.findBy({
-      name: name,
-    });
+    try {
+      const quotes: QuoteModel[] = await this.quotesRepository.findBy({
+        name: name,
+      });
+      return quotes;
+    } catch (error) {
+      throw new NotImplementedException('Value not founded', {
+        cause: new Error(),
+        description: 'There are not any qoutes with this name ',
+      });
+    }
   }
 
   async findTicker(name: string): Promise<TickerModel> {
-    return this.tickersService.findOne(name);
+    try {
+      return this.tickersService.findOne(name);
+    } catch (error) {
+      throw new NotImplementedException('Value not founded', {
+        cause: new Error(),
+        description: 'There are not any qoutes with this name ',
+      });
+    }
   }
 
   // TODO!!!!   Wziąć przypadek istniejącego rekordu (duplikowanie)

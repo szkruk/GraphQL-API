@@ -37,6 +37,13 @@ export class QuotesResolver {
     return this.quotesService.findAllByName(name);
   }
 
+  @Query((returns) => [QuoteModel], { name: 'quoteByTimestamp' })
+  async findAllQuotesByTimestamp(
+    @Args('timestamp', { type: () => Int }) timestamp: number,
+  ): Promise<QuoteModel[]> {
+    return this.quotesService.findAllByTimeStamp(timestamp);
+  }
+
   @ResolveField((returns) => TickerModel, { name: 'ticker' })
   ticker(@Parent() quote: QuoteModel): Promise<TickerModel> {
     return this.quotesService.findTicker(quote.name);

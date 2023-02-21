@@ -20,6 +20,7 @@ type Query {
   quotes: [QuoteModel!]!
   quote(name: String!, timestamp: Int!): QuoteModel!
   quoteByName(name: String!): [QuoteModel!]!
+  quoteByTimestamp(timestamp: Int!): [QuoteModel!]!
   tickers: [TickerModel!]!
   ticker(name: String!): TickerModel!
 }
