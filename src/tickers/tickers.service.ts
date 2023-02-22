@@ -1,6 +1,11 @@
-import { Injectable, NotImplementedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotImplementedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DatabaseException } from '../common/database.exception';
 import { CreateTickerInput } from './dto/create-ticker.input';
 import { TickerEntity } from './entities/ticker.entity';
 import { TickerModel } from './model/ticker.model';
@@ -15,11 +20,8 @@ export class TickersService {
   async findAll(): Promise<TickerModel[]> {
     try {
       return await this.tickersRepository.find();
-    } catch (error) {
-      throw new NotImplementedException('Something with database', {
-        cause: new Error(),
-        description: 'Nie wiadomo',
-      });
+    } catch {
+      throw new DatabaseException();
     }
   }
 
@@ -37,18 +39,18 @@ export class TickersService {
           },
         })) != null
       ) {
-        throw new NotImplementedException('Ticker already exists', {
+        throw new BadRequestException('Ticker already exists', {
           cause: new Error(),
-          description: 'Ticker already exists',
+          description: 'You are trying to create ticker, which already exists.',
         });
       }
 
       const newTicker = this.tickersRepository.create(createTickerInput);
       await this.tickersRepository.save(newTicker);
 
-      queryRunner.commitTransaction();
+      await queryRunner.commitTransaction();
 
-      queryRunner.release();
+      await queryRunner.release();
 
       return newTicker;
     } catch (error) {
@@ -56,18 +58,39 @@ export class TickersService {
 
       await queryRunner.release();
 
-      throw error;
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
   async findOne(name: string): Promise<TickerModel> {
     try {
-      return await this.tickersRepository.findOneByOrFail({ name: name });
+      const Ticker = await this.tickersRepository.manager.findOne(
+        TickerEntity,
+        {
+          where: {
+            name: name,
+          },
+        },
+      );
+
+      if (Ticker == null) {
+        throw new BadRequestException('Ticker not found', {
+          cause: new Error(),
+          description: 'Ticker with this name doesnt exist',
+        });
+      }
+
+      return Ticker;
     } catch (error) {
-      throw new NotImplementedException('Value not founded', {
-        cause: new Error(),
-        description: 'There is not ticker with this name ',
-      });
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
@@ -84,7 +107,7 @@ export class TickersService {
         },
       });
       if (Ticker == null) {
-        throw new NotImplementedException('Value not founded', {
+        throw new BadRequestException('Value not founded', {
           cause: new Error(),
           description: 'There is not ticker with this name ',
         });
@@ -101,11 +124,18 @@ export class TickersService {
       await queryRunner.rollbackTransaction();
 
       await queryRunner.release();
-      throw error;
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
-  async editTicker(createTickerInput: CreateTickerInput): Promise<TickerModel> {
+  async updateTicker(
+    createTickerInput: CreateTickerInput,
+  ): Promise<TickerModel> {
     const queryRunner =
       this.tickersRepository.manager.connection.createQueryRunner();
     try {
@@ -125,7 +155,7 @@ export class TickersService {
           { ...createTickerInput },
         );
       } else {
-        throw new NotImplementedException('There is no ticker like this', {
+        throw new BadRequestException('There is no ticker like this', {
           cause: new Error(),
           description: 'There is no ticker like this ',
         });
@@ -143,7 +173,11 @@ export class TickersService {
 
       await queryRunner.release();
 
-      throw error;
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 }

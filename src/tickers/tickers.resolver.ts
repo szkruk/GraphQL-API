@@ -21,10 +21,10 @@ export class TickersResolver {
   }
 
   @Mutation(() => TickerModel)
-  async editTicker(
+  async updateTicker(
     @Args('createTickerInput') createTickerInput: CreateTickerInput,
   ): Promise<TickerModel> {
-    return await this.tickersService.editTicker(createTickerInput);
+    return await this.tickersService.updateTicker(createTickerInput);
   }
 
   @Query(() => [TickerModel], { name: 'tickers' })

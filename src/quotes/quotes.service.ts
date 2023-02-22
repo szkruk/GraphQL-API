@@ -4,13 +4,15 @@ import {
   NotImplementedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm/dist/common';
-import { TickerEntity } from 'src/tickers/entities/ticker.entity';
-import { TickerModel } from 'src/tickers/model/ticker.model';
-import { TickersService } from 'src/tickers/tickers.service';
+import { TickerEntity } from '../tickers/entities/ticker.entity';
+import { TickerModel } from '../tickers/model/ticker.model';
+import { TickersService } from '../tickers/tickers.service';
 import { Repository } from 'typeorm/repository/Repository';
 import { CreateQuoteInput } from './dto/create-quote.input';
 import { QuoteEntity } from './entities/quote.entity';
 import { QuoteModel } from './model/quote.model';
+import { DatabaseException } from '../common/database.exception';
+import { isInstance } from 'class-validator';
 
 @Injectable()
 export class QuotesService {
@@ -22,28 +24,38 @@ export class QuotesService {
 
   async findAll(): Promise<QuoteModel[]> {
     try {
-      const Quotes = await this.quotesRepository.find();
-      return Quotes;
-    } catch (error) {
-      throw new NotImplementedException('Coś nie tak', {
-        cause: new Error(),
-        description: 'Jakis blad',
-      });
+      return await this.quotesRepository.find();
+    } catch {
+      throw new DatabaseException();
     }
   }
 
   async findOne(name: string, timestamp: number): Promise<QuoteModel> {
     try {
-      const Quote: QuoteModel = await this.quotesRepository.findOneByOrFail({
-        name: name,
-        timestamp: timestamp,
-      });
+      const Quote: QuoteModel = await this.quotesRepository.manager.findOne(
+        QuoteEntity,
+        {
+          where: {
+            name: name,
+            timestamp: timestamp,
+          },
+        },
+      );
+
+      if (Quote == null) {
+        throw new BadRequestException('Value not founded', {
+          cause: new Error(),
+          description: 'There is not qoute with this name and timestamp',
+        });
+      }
+
       return Quote;
     } catch (error) {
-      throw new NotImplementedException('Value not founded', {
-        cause: new Error(),
-        description: 'There is not qoute with this name and timestamp',
-      });
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
@@ -53,11 +65,8 @@ export class QuotesService {
         timestamp: timestamp,
       });
       return quotes;
-    } catch (error) {
-      throw new NotImplementedException('Value not founded', {
-        cause: new Error(),
-        description: 'There are not any qoutes with this timestamp',
-      });
+    } catch {
+      throw new DatabaseException();
     }
   }
 
@@ -67,22 +76,16 @@ export class QuotesService {
         name: name,
       });
       return quotes;
-    } catch (error) {
-      throw new NotImplementedException('Value not founded', {
-        cause: new Error(),
-        description: 'There are not any qoutes with this name ',
-      });
+    } catch {
+      throw new DatabaseException();
     }
   }
 
   async findTicker(name: string): Promise<TickerModel> {
     try {
-      return this.tickersService.findOne(name);
-    } catch (error) {
-      throw new NotImplementedException('Value not founded', {
-        cause: new Error(),
-        description: 'There are not any qoutes with this name ',
-      });
+      return await this.tickersService.findOne(name);
+    } catch {
+      throw new DatabaseException();
     }
   }
 
@@ -99,14 +102,13 @@ export class QuotesService {
             name: createQuoteInput.name,
             timestamp: createQuoteInput.timestamp,
           },
-        })) !== null
+        })) != null
       ) {
         throw new BadRequestException('Qoute already exists', {
           cause: new Error(),
-          description: 'There was error ',
+          description: 'There is a quote with same name and timestamp.',
         });
       }
-
       if (
         (await queryRunner.manager.findOne(TickerEntity, {
           where: {
@@ -133,11 +135,11 @@ export class QuotesService {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
 
-      throw error;
-      // throw new NotImplementedException('Value not founded', {
-      //   cause: new Error(),
-      //   description: 'There was error ',
-      // });
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
@@ -164,9 +166,9 @@ export class QuotesService {
           { price: createQuoteInput.price },
         );
       } else {
-        throw new NotImplementedException('There is no quote like this', {
+        throw new BadRequestException("Quote doesn't exists", {
           cause: new Error(),
-          description: 'There is no Qoute like this ',
+          description: "Quote with this name and timestamp doesn't exists",
         });
       }
       Quote.price = createQuoteInput.price;
@@ -181,7 +183,11 @@ export class QuotesService {
 
       await queryRunner.release();
 
-      throw error;
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
@@ -200,9 +206,9 @@ export class QuotesService {
       });
 
       if (Quote == null) {
-        throw new NotImplementedException('Nothing to delete', {
+        throw new BadRequestException("Quote doesn't exists", {
           cause: new Error(),
-          description: 'There is no Qoute like this ',
+          description: "You can't delete quote which doesn't exist",
         });
       } else {
         await this.quotesRepository.delete(Quote);
@@ -215,9 +221,14 @@ export class QuotesService {
       return Quote;
     } catch (error) {
       await queryRunner.rollbackTransaction();
+
       await queryRunner.release();
 
-      throw error;
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 }

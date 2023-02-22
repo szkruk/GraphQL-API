@@ -7,7 +7,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { TickerModel } from 'src/tickers/model/ticker.model';
+import { TickerModel } from '../tickers/model/ticker.model';
 import { CreateQuoteInput } from './dto/create-quote.input';
 
 import { QuoteModel } from './model/quote.model';
