@@ -9,10 +9,9 @@ import { TickerModel } from '../tickers/model/ticker.model';
 import { TickersService } from '../tickers/tickers.service';
 import { Repository } from 'typeorm/repository/Repository';
 import { CreateQuoteInput } from './dto/create-quote.input';
-import { QuoteEntity } from './entities/quote.entity';
+import { QuoteEntity } from '././entities/quote.entity';
 import { QuoteModel } from './model/quote.model';
 import { DatabaseException } from '../common/database.exception';
-import { isInstance } from 'class-validator';
 
 @Injectable()
 export class QuotesService {
@@ -143,7 +142,7 @@ export class QuotesService {
     }
   }
 
-  async editQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
+  async update(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
     const queryRunner =
       this.quotesRepository.manager.connection.createQueryRunner();
 

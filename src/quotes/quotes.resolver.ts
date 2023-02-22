@@ -65,9 +65,9 @@ export class QuotesResolver {
   }
 
   @Mutation((returns) => QuoteModel)
-  async editQuote(
+  async updateQuote(
     @Args('createQuoteInput') createQuoteInput: CreateQuoteInput,
   ): Promise<QuoteModel> {
-    return this.quotesService.editQuote(createQuoteInput);
+    return this.quotesService.update(createQuoteInput);
   }
 }
