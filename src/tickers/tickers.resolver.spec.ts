@@ -9,17 +9,17 @@ describe('TickersResolver', () => {
 
   const mockTickersService = {
     create: jest.fn((createTickerInput: CreateTickerInput) => {
-      return {
+      return Promise.resolve({
         ...createTickerInput,
-      };
+      });
     }),
 
     updateTicker: jest.fn((createTickerInput: CreateTickerInput) => {
-      return { ...createTickerInput };
+      return Promise.resolve({ ...createTickerInput });
     }),
 
     deleteTicker: jest.fn((name: string) => {
-      return { name: name, fullName: expect.any(String) };
+      return Promise.resolve({ name: name, fullName: expect.any(String) });
     }),
 
     findAll: jest.fn(() => {
@@ -34,11 +34,11 @@ describe('TickersResolver', () => {
         },
       ];
 
-      return Tickers;
+      return Promise.resolve(Tickers);
     }),
 
     findOne: jest.fn((name: string) => {
-      return { name: name, fullName: expect.any(String) };
+      return Promise.resolve({ name: name, fullName: expect.any(String) });
     }),
   };
 

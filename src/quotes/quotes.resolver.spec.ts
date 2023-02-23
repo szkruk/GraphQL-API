@@ -27,19 +27,19 @@ describe('QuotesResolver', () => {
 
   const mockQuoteService = {
     findAll: jest.fn(() => {
-      return Quotes;
+      return Promise.resolve(Quotes);
     }),
 
     findOne: jest.fn((name: string, timestamp: number) => {
-      return {
+      return Promise.resolve({
         name: name,
         timestamp: timestamp,
         price: expect.any(Number),
-      };
+      });
     }),
 
     findAllByName: jest.fn((name: string) => {
-      return [
+      return Promise.resolve([
         {
           name: 'TSL',
           timestamp: 1241,
@@ -50,11 +50,11 @@ describe('QuotesResolver', () => {
           timestamp: 1242,
           price: 1.23,
         },
-      ];
+      ]);
     }),
 
     findAllByTimeStamp: jest.fn(() => {
-      return [
+      return Promise.resolve([
         {
           name: 'TSL',
           timestamp: 1241,
@@ -65,27 +65,27 @@ describe('QuotesResolver', () => {
           timestamp: 1241,
           price: 1.24,
         },
-      ];
+      ]);
     }),
 
     createQuote: jest.fn((createQuoteInput: CreateQuoteInput) => {
-      return {
+      return Promise.resolve({
         ...createQuoteInput,
-      };
+      });
     }),
 
     deleteQuote: jest.fn((name: string, timestamp: number) => {
-      return {
+      return Promise.resolve({
         name: name,
         timestamp: timestamp,
         price: expect.any(Number),
-      };
+      });
     }),
 
     update: jest.fn((createQuoteInput: CreateQuoteInput) => {
-      return {
+      return Promise.resolve({
         ...createQuoteInput,
-      };
+      });
     }),
   };
 
