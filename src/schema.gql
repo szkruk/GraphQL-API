@@ -2,18 +2,17 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-"""Ticker Model"""
-type TickerModel {
-  name: String!
-  fullName: String!
-}
-
 """Quote Model"""
 type QuoteModel {
   name: String!
   timestamp: Int!
   price: Float!
-  ticker: TickerModel!
+}
+
+"""Ticker Model"""
+type TickerModel {
+  name: String!
+  fullName: String!
 }
 
 type Query {

@@ -80,14 +80,6 @@ export class QuotesService {
     }
   }
 
-  async findTicker(name: string): Promise<TickerModel> {
-    try {
-      return await this.tickersService.findOne(name);
-    } catch {
-      throw new DatabaseException();
-    }
-  }
-
   async createQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
     const queryRunner =
       this.quotesRepository.manager.connection.createQueryRunner();

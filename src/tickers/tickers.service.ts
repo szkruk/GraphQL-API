@@ -61,7 +61,7 @@ export class TickersService {
       if (error instanceof BadRequestException) {
         throw error;
       } else {
-        throw new DatabaseException();
+        throw error;
       }
     }
   }

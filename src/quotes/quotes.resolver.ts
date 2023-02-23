@@ -44,11 +44,6 @@ export class QuotesResolver {
     return this.quotesService.findAllByTimeStamp(timestamp);
   }
 
-  @ResolveField((returns) => TickerModel, { name: 'ticker' })
-  ticker(@Parent() quote: QuoteModel): Promise<TickerModel> {
-    return this.quotesService.findTicker(quote.name);
-  }
-
   @Mutation((returns) => QuoteModel)
   async createQuote(
     @Args('createQuoteInput') createQuoteInput: CreateQuoteInput,

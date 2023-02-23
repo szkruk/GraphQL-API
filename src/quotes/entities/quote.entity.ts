@@ -6,7 +6,7 @@ export class QuoteEntity {
   @PrimaryColumn({ type: 'int' })
   timestamp: number;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'float' })
   price: number;
 
   @PrimaryColumn({ type: 'varchar', length: 6 })
