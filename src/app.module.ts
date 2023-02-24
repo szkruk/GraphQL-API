@@ -6,6 +6,8 @@ import { QuotesModule } from './quotes/quotes.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TickersModule } from './tickers/tickers.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { QuoteEntity } from './quotes/entities/quote.entity';
+import { TickerEntity } from './tickers/entities/ticker.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,7 +30,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         username: configService.get('POSTGRES_USER'),
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_NAME'),
-        entities: [__dirname + '/../**/*.entity.js'],
+        entities: [QuoteEntity, TickerEntity],
         synchronize: true,
       }),
     }),
