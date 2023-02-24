@@ -33,7 +33,7 @@ describe('QuotesService', () => {
             port: +configService.get('POSTGRES_PORT'),
             username: configService.get('POSTGRES_USER'),
             password: configService.get('POSTGRES_PASSWORD'),
-            database: 'test',
+            database: 'postgres',
             entities: [QuoteEntity, TickerEntity],
             synchronize: true,
           }),
