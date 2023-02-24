@@ -2,7 +2,6 @@ import { Field, Float, InputType, Int } from '@nestjs/graphql';
 import {
   IsAlpha,
   IsInt,
-  IsNotEmpty,
   IsPositive,
   IsUppercase,
   Length,

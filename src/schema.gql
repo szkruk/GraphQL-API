@@ -16,21 +16,21 @@ type TickerModel {
 }
 
 type Query {
-  quotes: [QuoteModel!]!
-  quote(name: String!, timestamp: Int!): QuoteModel!
-  quotesByName(name: String!): [QuoteModel!]!
-  quotesByTimestamp(timestamp: Int!): [QuoteModel!]!
-  tickers: [TickerModel!]!
-  ticker(name: String!): TickerModel!
+  getQuotes: [QuoteModel!]!
+  getQuote(name: String!, timestamp: Int!): QuoteModel!
+  getQuotesByName(name: String!): [QuoteModel!]!
+  getQuotesByTimestamp(timestamp: Int!): [QuoteModel!]!
+  getTickers: [TickerModel!]!
+  getTicker(name: String!): TickerModel!
 }
 
 type Mutation {
-  createQuote(createQuoteInput: CreateQuoteInput!): QuoteModel!
+  createQuote(newQuote: CreateQuoteInput!): QuoteModel!
   deleteQuote(name: String!, timestamp: Int!): QuoteModel!
-  updateQuote(createQuoteInput: CreateQuoteInput!): QuoteModel!
-  createTicker(createTickerInput: CreateTickerInput!): TickerModel!
+  updateQuote(updateQuote: CreateQuoteInput!): QuoteModel!
+  createTicker(newTicker: CreateTickerInput!): TickerModel!
   deleteTicker(name: String!): TickerModel!
-  updateTicker(createTickerInput: CreateTickerInput!): TickerModel!
+  updateTicker(updateTicker: CreateTickerInput!): TickerModel!
 }
 
 input CreateQuoteInput {

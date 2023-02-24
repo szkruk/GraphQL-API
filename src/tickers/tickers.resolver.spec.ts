@@ -53,11 +53,11 @@ describe('TickersResolver', () => {
     resolver = module.get<TickersResolver>(TickersResolver);
   });
 
-  it('should be defined', () => {
+  it('Should be defined', () => {
     expect(resolver).toBeDefined();
   });
 
-  describe('create a Ticker', () => {
+  describe('Create a ticker', () => {
     let Ticker: TickerModel;
     beforeAll(async () => {
       Ticker = await resolver.createTicker({
@@ -65,11 +65,11 @@ describe('TickersResolver', () => {
         fullName: 'Tesla',
       });
     });
-    it('should return a TickerModel', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should create a Ticker', async () => {
+    it('Should create a ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSL',
         fullName: 'Tesla',
@@ -77,7 +77,7 @@ describe('TickersResolver', () => {
     });
   });
 
-  describe('update a Ticker', () => {
+  describe('Update a ticker', () => {
     let Ticker: TickerModel;
     beforeAll(async () => {
       Ticker = await resolver.updateTicker({
@@ -86,11 +86,11 @@ describe('TickersResolver', () => {
       });
     });
 
-    it('should return a TickerModel', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should update a Ticker', async () => {
+    it('Should update a ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSL',
         fullName: 'Tesla',
@@ -98,17 +98,17 @@ describe('TickersResolver', () => {
     });
   });
 
-  describe('delete a Ticker', () => {
+  describe('Delete a ticker', () => {
     let Ticker: TickerModel;
     beforeAll(async () => {
       Ticker = await resolver.deleteTicker('TSL');
     });
 
-    it('should return a TickerModel', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should return deleted Ticker', async () => {
+    it('Should return deleted ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSL',
         fullName: expect.any(String),
@@ -116,19 +116,19 @@ describe('TickersResolver', () => {
     });
   });
 
-  describe('get all Tickers', () => {
+  describe('Get all tickers', () => {
     let Tickers: TickerModel[];
     beforeAll(async () => {
       Tickers = await resolver.findAll();
     });
-    it('should returns array of Tickers', async () => {
+    it('Should returns array of tickers', async () => {
       expect(Array.isArray(Tickers)).toBe(true);
     });
 
-    it('should return array with lenght equal to 2', async () => {
+    it('Should return array with length equal to 2', async () => {
       expect(Tickers.length).toEqual(2);
     });
-    it('should return two tickers', () => {
+    it('Should return two tickers', () => {
       async () => {
         expect(Tickers).toEqual([
           {
@@ -150,11 +150,11 @@ describe('TickersResolver', () => {
       Ticker = await resolver.findOne('TSL');
     });
 
-    it('should return a TickerModel object', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should return one specific Ticker', async () => {
+    it('Should return one specific ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSL',
         fullName: expect.any(String),

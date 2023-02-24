@@ -53,7 +53,7 @@ describe('QuotesResolver', () => {
       ]);
     }),
 
-    findAllByTimeStamp: jest.fn(() => {
+    findAllByTimestamp: jest.fn(() => {
       return Promise.resolve([
         {
           name: 'TSL',
@@ -100,25 +100,25 @@ describe('QuotesResolver', () => {
     resolver = module.get<QuotesResolver>(QuotesResolver);
   });
 
-  it('should be defined', () => {
+  it('Should be defined', () => {
     expect(resolver).toBeDefined();
   });
 
-  describe('get all Quotes', () => {
+  describe('Get all quotes', () => {
     let Quotes: QuoteModel[];
     beforeAll(async () => {
       Quotes = await resolver.findAllQuotes();
     });
 
-    it('should returns array of Quotes', async () => {
+    it('Should return array of quotes', async () => {
       expect(Array.isArray(Quotes)).toBe(true);
     });
 
-    it('should return array with length equal to 3', async () => {
+    it('Should return array with length equal to 3', async () => {
       expect(Quotes.length).toEqual(3);
     });
 
-    it('should return three quotes', async () => {
+    it('Should return three quotes', async () => {
       expect(Quotes).toEqual([
         {
           name: 'TSL',
@@ -139,17 +139,17 @@ describe('QuotesResolver', () => {
     });
   });
 
-  describe('get one Quote', () => {
+  describe('Get one Quote', () => {
     let Quote: QuoteModel;
     beforeAll(async () => {
       Quote = await resolver.findOneQuote('TSL', 1231);
     });
 
-    it('should return QuoteModel', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return quote ', () => {
+    it('Should return quote ', () => {
       expect(Quote).toEqual({
         name: 'TSL',
         timestamp: 1231,
@@ -158,21 +158,21 @@ describe('QuotesResolver', () => {
     });
   });
 
-  describe('get quotes by Name', () => {
+  describe('Get quotes by Name', () => {
     let Quotes: QuoteModel[];
     beforeAll(async () => {
       Quotes = await resolver.findAllQuotesByName('TSL');
     });
 
-    it('should return QuoteModel', () => {
+    it('Should return array', () => {
       expect(Array.isArray(Quotes));
     });
 
-    it('should return array with length equal to 2', async () => {
+    it('Should return array with length equal to 2', async () => {
       expect(Quotes.length).toEqual(2);
     });
 
-    it('should return quotes with same name ', () => {
+    it('Should return quotes with same name ', () => {
       expect(Quotes).toEqual([
         {
           name: 'TSL',
@@ -188,21 +188,21 @@ describe('QuotesResolver', () => {
     });
   });
 
-  describe('get quotes by Timestamp', () => {
+  describe('Get quotes by Timestamp', () => {
     let Quotes: QuoteModel[];
     beforeAll(async () => {
       Quotes = await resolver.findAllQuotesByTimestamp(1241);
     });
 
-    it('should return QuoteModel', () => {
+    it('Should return array', () => {
       expect(Array.isArray(Quotes));
     });
 
-    it('should return array with length equal to 2', async () => {
+    it('Should return array with length equal to 2', async () => {
       expect(Quotes.length).toEqual(2);
     });
 
-    it('should return quotes with same timestamp ', () => {
+    it('Should return quotes with same timestamp ', () => {
       expect(Quotes).toEqual([
         {
           name: 'TSL',
@@ -218,7 +218,7 @@ describe('QuotesResolver', () => {
     });
   });
 
-  describe('creating quote', () => {
+  describe('Create quote', () => {
     let Quote: QuoteModel;
     beforeAll(async () => {
       Quote = await resolver.createQuote({
@@ -228,11 +228,11 @@ describe('QuotesResolver', () => {
       });
     });
 
-    it('should return QuoteModel', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return created quote', () => {
+    it('Should return created quote', () => {
       expect(Quote).toEqual({
         name: 'TSL',
         timestamp: 123,
@@ -241,7 +241,7 @@ describe('QuotesResolver', () => {
     });
   });
 
-  describe('updating quote', () => {
+  describe('Update quote', () => {
     let Quote: QuoteModel;
     beforeAll(async () => {
       Quote = await resolver.updateQuote({
@@ -251,11 +251,11 @@ describe('QuotesResolver', () => {
       });
     });
 
-    it('should return QuoteModel', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return updated quote', () => {
+    it('Should return updated quote', () => {
       expect(Quote).toEqual({
         name: 'TSL',
         timestamp: 123,
@@ -264,17 +264,17 @@ describe('QuotesResolver', () => {
     });
   });
 
-  describe('deleting quote', () => {
+  describe('Delete quote', () => {
     let Quote: QuoteModel;
     beforeAll(async () => {
       Quote = await resolver.deleteQuote('TSL', 123);
     });
 
-    it('should return QuoteModel', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return deleted quote', () => {
+    it('Should return deleted quote', () => {
       expect(Quote).toEqual({
         name: 'TSL',
         timestamp: 123,

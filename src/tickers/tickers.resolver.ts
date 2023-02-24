@@ -1,6 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { TickersService } from './tickers.service';
-import { TickerEntity } from './entities/ticker.entity';
 import { CreateTickerInput } from './dto/create-ticker.input';
 import { TickerModel } from './model/ticker.model';
 
@@ -8,31 +7,31 @@ import { TickerModel } from './model/ticker.model';
 export class TickersResolver {
   constructor(private readonly tickersService: TickersService) {}
 
-  @Mutation(() => TickerModel)
+  @Mutation(() => TickerModel, { name: 'createTicker' })
   async createTicker(
-    @Args('createTickerInput') createTickerInput: CreateTickerInput,
+    @Args('newTicker') createTickerInput: CreateTickerInput,
   ): Promise<TickerModel> {
     return await this.tickersService.create(createTickerInput);
   }
 
-  @Mutation(() => TickerModel)
+  @Mutation(() => TickerModel, { name: 'deleteTicker' })
   async deleteTicker(@Args('name') name: string): Promise<TickerModel> {
     return await this.tickersService.deleteTicker(name);
   }
 
-  @Mutation(() => TickerModel)
+  @Mutation(() => TickerModel, { name: 'updateTicker' })
   async updateTicker(
-    @Args('createTickerInput') createTickerInput: CreateTickerInput,
+    @Args('updateTicker') createTickerInput: CreateTickerInput,
   ): Promise<TickerModel> {
     return await this.tickersService.updateTicker(createTickerInput);
   }
 
-  @Query(() => [TickerModel], { name: 'tickers' })
+  @Query(() => [TickerModel], { name: 'getTickers' })
   async findAll(): Promise<TickerModel[]> {
     return await this.tickersService.findAll();
   }
 
-  @Query(() => TickerModel, { name: 'ticker' })
+  @Query(() => TickerModel, { name: 'getTicker' })
   async findOne(
     @Args('name', { type: () => String }) name: string,
   ): Promise<TickerModel> {

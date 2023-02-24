@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
-import { QuoteEntity } from '../src/quotes/entities/quote.entity';
 
 describe('GraphQL AppResolver ', () => {
   let app: INestApplication;
@@ -27,41 +26,41 @@ describe('GraphQL AppResolver ', () => {
   }
 
   async function initDB() {
-    const Tickers = await sendQuery('query{tickers{name}}');
+    const Tickers = await sendQuery('query{getTickers{name}}');
 
     await Promise.all(
-      Tickers.body.data.tickers.map(async (ticker) => {
+      Tickers.body.data.getTickers.map(async (ticker) => {
         await sendQuery(`mutation{deleteTicker(name:"${ticker.name}"){name}}`);
       }),
     );
 
     await sendQuery(
-      `mutation{createQuote(createQuoteInput:{name:"TSL" timestamp:${123} price:${13.4}}){name timestamp}}`,
+      `mutation{createQuote(newQuote:{name:"TSL" timestamp:${123} price:${13.4}}){name timestamp}}`,
     );
 
     await sendQuery(
-      `mutation{createQuote(createQuoteInput:{name:"TSL" timestamp:${124} price:${13.5}}){name timestamp}}`,
+      `mutation{createQuote(newQuote:{name:"TSL" timestamp:${124} price:${13.5}}){name timestamp}}`,
     );
 
     await sendQuery(
-      `mutation{createQuote(createQuoteInput:{name:"INTC" timestamp:${123} price:${23.4}}){name timestamp}}`,
+      `mutation{createQuote(newQuote:{name:"INTC" timestamp:${123} price:${23.4}}){name timestamp}}`,
     );
   }
 
-  describe('get all quotes', () => {
+  describe('Get all quotes', () => {
     let Quotes;
     beforeAll(async () => {
       await initDB();
 
-      Quotes = (await sendQuery('query{quotes{name timestamp price}}')).body
-        .data.quotes;
+      Quotes = (await sendQuery('query{getQuotes{name timestamp price}}')).body
+        .data.getQuotes;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Quotes).toBeDefined();
     });
 
-    it('should return 3 quotes', async () => {
+    it('Should return 3 quotes', async () => {
       expect(Quotes).toEqual([
         {
           name: 'TSL',
@@ -82,7 +81,7 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('find one Quote', () => {
+  describe('Get one quote', () => {
     let Quote;
 
     beforeAll(async () => {
@@ -90,16 +89,16 @@ describe('GraphQL AppResolver ', () => {
 
       Quote = (
         await sendQuery(
-          `query{quote(name:"TSL", timestamp:${124}){name timestamp price}}`,
+          `query{getQuote(name:"TSL", timestamp:${124}){name timestamp price}}`,
         )
-      ).body.data.quote;
+      ).body.data.getQuote;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return choosen quote', async () => {
+    it('Should return choosen quote', async () => {
       expect(Quote).toEqual({
         name: 'TSL',
         timestamp: 124,
@@ -107,10 +106,10 @@ describe('GraphQL AppResolver ', () => {
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const QuoteError = (
         await sendQuery(
-          `query{quote(name:"TSL", timestamp:${125}){name timestamp price}}`,
+          `query{getQuote(name:"TSL", timestamp:${125}){name timestamp price}}`,
         )
       ).body.errors[0].message;
 
@@ -118,23 +117,23 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('find by Timestamp', () => {
+  describe('Get quotes by timestamp', () => {
     let Quotes;
     beforeAll(async () => {
       await initDB();
 
       Quotes = (
         await sendQuery(
-          `query{quotesByTimestamp(timestamp:${123}){name timestamp price}}`,
+          `query{getQuotesByTimestamp(timestamp:${123}){name timestamp price}}`,
         )
-      ).body.data.quotesByTimestamp;
+      ).body.data.getQuotesByTimestamp;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Quotes).toBeDefined();
     });
 
-    it('should return two quote with same timestamp', async () => {
+    it('Should return two quotes with same timestamp', async () => {
       expect(Quotes).toEqual([
         {
           name: 'TSL',
@@ -149,32 +148,34 @@ describe('GraphQL AppResolver ', () => {
       ]);
     });
 
-    it('should return empty array', async () => {
+    it('Should return empty array', async () => {
       const QuotesEmpty = (
         await sendQuery(
-          `query{quotesByTimestamp(timestamp:${122}){name timestamp price}}`,
+          `query{getQuotesByTimestamp(timestamp:${122}){name timestamp price}}`,
         )
-      ).body.data.quotesByTimestamp;
+      ).body.data.getQuotesByTimestamp;
 
       expect(QuotesEmpty).toEqual([]);
     });
   });
 
-  describe('find by Name', () => {
+  describe('Get quotes by name', () => {
     let Quotes;
     beforeAll(async () => {
       await initDB();
 
       Quotes = (
-        await sendQuery(`query{quotesByName(name:"TSL"){name timestamp price}}`)
-      ).body.data.quotesByName;
+        await sendQuery(
+          `query{getQuotesByName(name:"TSL"){name timestamp price}}`,
+        )
+      ).body.data.getQuotesByName;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Quotes).toBeDefined();
     });
 
-    it('should return two quotes with same name', async () => {
+    it('Should return two quotes with same name', async () => {
       expect(Quotes).toEqual([
         {
           name: 'TSL',
@@ -189,34 +190,34 @@ describe('GraphQL AppResolver ', () => {
       ]);
     });
 
-    it('should return empty array', async () => {
+    it('Should return empty array', async () => {
       const QuotesEmpty = (
         await sendQuery(
-          `query{quotesByName(name:"TSLA"){name timestamp price}}`,
+          `query{getQuotesByName(name:"TSLA"){name timestamp price}}`,
         )
-      ).body.data.quotesByName;
+      ).body.data.getQuotesByName;
 
       expect(QuotesEmpty).toEqual([]);
     });
   });
 
-  describe('create a quote', () => {
+  describe('Create a quote', () => {
     let Quote;
     beforeAll(async () => {
       await initDB();
 
       Quote = (
         await sendQuery(
-          `mutation{createQuote(createQuoteInput:{name:"TSLA" timestamp:${123} price:${13.4}}){name timestamp price}}`,
+          `mutation{createQuote(newQuote:{name:"TSLA" timestamp:${123} price:${13.4}}){name timestamp price}}`,
         )
       ).body.data.createQuote;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return created Quote', async () => {
+    it('Should return created quote', async () => {
       expect(Quote).toEqual({
         name: 'TSLA',
         timestamp: 123,
@@ -224,10 +225,10 @@ describe('GraphQL AppResolver ', () => {
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const QuoteError = (
         await sendQuery(
-          `mutation{createQuote(createQuoteInput:{name:"TSLA" timestamp:${123} price:${13.4}}){name timestamp price}}`,
+          `mutation{createQuote(newQuote:{name:"TSLA" timestamp:${123} price:${13.4}}){name timestamp price}}`,
         )
       ).body.errors[0].message;
 
@@ -235,23 +236,23 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('update quote', () => {
+  describe('Update quote', () => {
     let Quote;
     beforeAll(async () => {
       await initDB();
 
       Quote = (
         await sendQuery(
-          `mutation{updateQuote(createQuoteInput:{name:"TSL" timestamp:${123} price:${17.4}}){name timestamp price}}`,
+          `mutation{updateQuote(updateQuote:{name:"TSL" timestamp:${123} price:${17.4}}){name timestamp price}}`,
         )
       ).body.data.updateQuote;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return updated Quote', async () => {
+    it('Should return updated quote', async () => {
       expect(Quote).toEqual({
         name: 'TSL',
         timestamp: 123,
@@ -259,10 +260,10 @@ describe('GraphQL AppResolver ', () => {
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const QuoteError = (
         await sendQuery(
-          `mutation{updateQuote(createQuoteInput:{name:"TSLA" timestamp:${123} price:${17.4}}){name timestamp price}}`,
+          `mutation{updateQuote(updateQuote:{name:"TSLA" timestamp:${123} price:${17.4}}){name timestamp price}}`,
         )
       ).body.errors[0].message;
 
@@ -270,7 +271,7 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('delete quote', () => {
+  describe('Delete quote', () => {
     let Quote;
     beforeAll(async () => {
       await initDB();
@@ -282,11 +283,11 @@ describe('GraphQL AppResolver ', () => {
       ).body.data.deleteQuote;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return deleted Quote', async () => {
+    it('Should return deleted Quote', async () => {
       expect(Quote).toEqual({
         name: 'TSL',
         timestamp: 123,
@@ -294,7 +295,7 @@ describe('GraphQL AppResolver ', () => {
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const QuoteError = (
         await sendQuery(
           `mutation{deleteQuote(name:"TSLA" timestamp:${123}){name timestamp price}}`,
@@ -305,7 +306,7 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('create a Ticker', () => {
+  describe('Create a Ticker', () => {
     let Ticker;
 
     beforeAll(async () => {
@@ -313,26 +314,26 @@ describe('GraphQL AppResolver ', () => {
 
       Ticker = (
         await sendQuery(
-          `mutation{createTicker(createTickerInput:{name:"TSLA" fullName:"Teslaa"}){name fullName}}`,
+          `mutation{createTicker(newTicker:{name:"TSLA" fullName:"Teslaa"}){name fullName}}`,
         )
       ).body.data.createTicker;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should return created Ticker', async () => {
+    it('Should return created Ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSLA',
         fullName: 'Teslaa',
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const TickerError = (
         await sendQuery(
-          `mutation{createTicker(createTickerInput:{name:"TSL" fullName:"Teslaa"}){name fullName}}`,
+          `mutation{createTicker(newTicker:{name:"TSL" fullName:"Teslaa"}){name fullName}}`,
         )
       ).body.errors[0].message;
 
@@ -340,21 +341,21 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('get all tickers', () => {
+  describe('Get all tickers', () => {
     let Tickers;
 
     beforeAll(async () => {
       await initDB();
 
-      Tickers = (await sendQuery(`query{tickers{name fullName}}`)).body.data
-        .tickers;
+      Tickers = (await sendQuery(`query{getTickers{name fullName}}`)).body.data
+        .getTickers;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Tickers).toBeDefined();
     });
 
-    it('should return all Tickers', async () => {
+    it('Should return all tickers', async () => {
       expect(Tickers).toEqual([
         {
           name: 'TSL',
@@ -368,37 +369,37 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('get one ticker', () => {
+  describe('Get ticker', () => {
     let Ticker;
 
     beforeAll(async () => {
       await initDB();
 
-      Ticker = (await sendQuery(`query{ticker(name:"TSL"){name fullName}}`))
-        .body.data.ticker;
+      Ticker = (await sendQuery(`query{getTicker(name:"TSL"){name fullName}}`))
+        .body.data.getTicker;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should return choosen ticker', async () => {
+    it('Should return choosen ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSL',
         fullName: 'unknown',
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const TickerError = (
-        await sendQuery(`query{ticker(name:"TSLAA"){name fullName}}`)
+        await sendQuery(`query{getTicker(name:"TSLAA"){name fullName}}`)
       ).body.errors[0].message;
 
       expect(TickerError).toEqual('Ticker not found');
     });
   });
 
-  describe('delete ticker', () => {
+  describe('Delete ticker', () => {
     let Ticker;
 
     beforeAll(async () => {
@@ -409,18 +410,18 @@ describe('GraphQL AppResolver ', () => {
       ).body.data.deleteTicker;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should return deleted ticker', async () => {
+    it('Should return deleted ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSL',
         fullName: 'unknown',
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const TickerError = (
         await sendQuery(`mutation{deleteTicker(name:"TSLAA"){name fullName}}`)
       ).body.errors[0].message;
@@ -429,7 +430,7 @@ describe('GraphQL AppResolver ', () => {
     });
   });
 
-  describe('update ticker', () => {
+  describe('Update ticker', () => {
     let Ticker;
 
     beforeAll(async () => {
@@ -437,26 +438,26 @@ describe('GraphQL AppResolver ', () => {
 
       Ticker = (
         await sendQuery(
-          `mutation{updateTicker(createTickerInput:{name:"TSL" fullName:"Teslaa"}){name fullName}}`,
+          `mutation{updateTicker(updateTicker:{name:"TSL" fullName:"Teslaa"}){name fullName}}`,
         )
       ).body.data.updateTicker;
     });
 
-    it('should be defined', async () => {
+    it('Should be defined', async () => {
       expect(Ticker).toBeDefined();
     });
 
-    it('should return updated ticker', async () => {
+    it('Should return updated ticker', async () => {
       expect(Ticker).toEqual({
         name: 'TSL',
         fullName: 'Teslaa',
       });
     });
 
-    it('should return error', async () => {
+    it('Should return error', async () => {
       const TickerError = (
         await sendQuery(
-          `mutation{updateTicker(createTickerInput:{name:"TSLA" fullName:"Teslaa"}){name fullName}}`,
+          `mutation{updateTicker(updateTicker:{name:"TSLA" fullName:"Teslaa"}){name fullName}}`,
         )
       ).body.errors[0].message;
 

@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotImplementedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DatabaseException } from '../common/database.exception';
@@ -109,7 +105,7 @@ export class TickersService {
       if (Ticker == null) {
         throw new BadRequestException('Value not founded', {
           cause: new Error(),
-          description: 'There is not ticker with this name ',
+          description: 'There is not ticker with this name.',
         });
       } else {
         await this.tickersRepository.delete(Ticker);
@@ -157,7 +153,7 @@ export class TickersService {
       } else {
         throw new BadRequestException('There is no ticker like this', {
           cause: new Error(),
-          description: 'There is no ticker like this ',
+          description: 'There is no ticker like this.',
         });
       }
 

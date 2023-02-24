@@ -79,15 +79,15 @@ describe('QuotesService', () => {
     });
   }
 
-  it('should be defined', () => {
+  it('Should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('should be defined', () => {
+  it('Should be defined', () => {
     expect(repository).toBeDefined();
   });
 
-  describe('get all quotes', () => {
+  describe('Get all quotes', () => {
     let Quotes: QuoteModel[];
 
     beforeAll(async () => {
@@ -102,7 +102,7 @@ describe('QuotesService', () => {
       Quotes = await service.findAll();
     });
 
-    it('should be defined', () => {
+    it('Should be defined', () => {
       expect(Quotes).toBeDefined();
     });
 
@@ -122,7 +122,7 @@ describe('QuotesService', () => {
     });
   });
 
-  describe('find Ticker', () => {
+  describe('Get one Quote', () => {
     let Quote: QuoteModel;
 
     beforeAll(async () => {
@@ -131,7 +131,7 @@ describe('QuotesService', () => {
       Quote = await service.findOne('TSL', 123);
     });
 
-    it('should be defined', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
@@ -143,14 +143,14 @@ describe('QuotesService', () => {
       });
     });
 
-    it('should return a error', async () => {
+    it('Should return a error', async () => {
       await expect(service.findOne('TSL', 1234)).rejects.toThrow(
         'Value not founded',
       );
     });
   });
 
-  describe('find by Timestamp', () => {
+  describe('Get quotes by timestamp', () => {
     let Quotes: QuoteModel[];
 
     beforeAll(async () => {
@@ -160,22 +160,22 @@ describe('QuotesService', () => {
         timestamp: 123,
         price: 12.3,
       });
-      Quotes = await service.findAllByTimeStamp(123);
+      Quotes = await service.findAllByTimestamp(123);
     });
 
-    it('should be defined', () => {
+    it('Should be defined', () => {
       expect(Quotes).toBeDefined();
     });
 
     it('Should return quotes with same timestamp', async () => {
       expect(Quotes).toEqual([
         {
-          name: 'INTC',
+          name: 'TSL',
           timestamp: 123,
           price: 12.3,
         },
         {
-          name: 'TSL',
+          name: 'INTC',
           timestamp: 123,
           price: 12.3,
         },
@@ -183,7 +183,7 @@ describe('QuotesService', () => {
     });
   });
 
-  describe('find by Name', () => {
+  describe('Get quotes by Name', () => {
     let Quotes: QuoteModel[];
 
     beforeAll(async () => {
@@ -196,7 +196,7 @@ describe('QuotesService', () => {
       Quotes = await service.findAllByName('TSL');
     });
 
-    it('should be defined', () => {
+    it('Should be defined', () => {
       expect(Quotes).toBeDefined();
     });
 
@@ -216,7 +216,7 @@ describe('QuotesService', () => {
     });
   });
 
-  describe('create a quote', () => {
+  describe('Create a quote', () => {
     let Quote: QuoteModel;
 
     const createQuote: CreateQuoteInput = {
@@ -231,22 +231,22 @@ describe('QuotesService', () => {
       Quote = await service.createQuote(createQuote);
     });
 
-    it('should be defined', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return a quote', () => {
+    it('Should return a quote', () => {
       expect(Quote).toEqual(createQuote);
     });
 
-    it('should return a error', async () => {
+    it('Should return a error', async () => {
       await expect(service.createQuote(createQuote)).rejects.toThrow(
         'Qoute already exists',
       );
     });
   });
 
-  describe('update quote', () => {
+  describe('Update quote', () => {
     let Quote: QuoteModel;
 
     const createQuote: CreateQuoteInput = {
@@ -261,15 +261,15 @@ describe('QuotesService', () => {
       Quote = await service.update(createQuote);
     });
 
-    it('should be defined', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return edited quote', () => {
+    it('Should return updated quote', () => {
       expect(Quote).toEqual(createQuote);
     });
 
-    it('should return a error', async () => {
+    it('Should return a error', async () => {
       await expect(
         service.update({
           name: 'TSLA',
@@ -280,7 +280,7 @@ describe('QuotesService', () => {
     });
   });
 
-  describe('delete quote', () => {
+  describe('Delete quote', () => {
     let Quote: QuoteModel;
 
     beforeAll(async () => {
@@ -289,11 +289,11 @@ describe('QuotesService', () => {
       Quote = await service.deleteQuote('TSL', 123);
     });
 
-    it('should be defined', () => {
+    it('Should be defined', () => {
       expect(Quote).toBeDefined();
     });
 
-    it('should return deleted quote', () => {
+    it('Should return deleted quote', () => {
       expect(Quote).toEqual({ name: 'TSL', timestamp: 123, price: 12.3 });
     });
 

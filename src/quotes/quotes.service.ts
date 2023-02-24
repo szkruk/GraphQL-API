@@ -1,11 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotImplementedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm/dist/common';
 import { TickerEntity } from '../tickers/entities/ticker.entity';
-import { TickerModel } from '../tickers/model/ticker.model';
 import { TickersService } from '../tickers/tickers.service';
 import { Repository } from 'typeorm/repository/Repository';
 import { CreateQuoteInput } from './dto/create-quote.input';
@@ -44,7 +39,7 @@ export class QuotesService {
       if (Quote == null) {
         throw new BadRequestException('Value not founded', {
           cause: new Error(),
-          description: 'There is not qoute with this name and timestamp',
+          description: 'There is not qoute with this name and timestamp.',
         });
       }
 
@@ -58,7 +53,7 @@ export class QuotesService {
     }
   }
 
-  async findAllByTimeStamp(timestamp: number): Promise<QuoteModel[]> {
+  async findAllByTimestamp(timestamp: number): Promise<QuoteModel[]> {
     try {
       const quotes: QuoteModel[] = await this.quotesRepository.findBy({
         timestamp: timestamp,
@@ -159,7 +154,7 @@ export class QuotesService {
       } else {
         throw new BadRequestException("Quote doesn't exists", {
           cause: new Error(),
-          description: "Quote with this name and timestamp doesn't exists",
+          description: "Quote with this name and timestamp doesn't exists.",
         });
       }
       Quote.price = createQuoteInput.price;

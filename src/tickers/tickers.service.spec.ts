@@ -21,6 +21,7 @@ describe('TickersService', () => {
 
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
+
           inject: [ConfigService],
 
           useFactory: (configService: ConfigService) => ({
