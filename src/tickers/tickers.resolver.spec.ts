@@ -23,7 +23,7 @@ describe('TickersResolver', () => {
     }),
 
     findAll: jest.fn(() => {
-      let Tickers: TickerModel[] = [
+      const Tickers: TickerModel[] = [
         {
           name: 'TSL',
           fullName: 'Tesla',

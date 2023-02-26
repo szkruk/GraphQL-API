@@ -148,14 +148,14 @@ describe('GraphQL AppResolver ', () => {
       ]);
     });
 
-    it('Should return empty array', async () => {
+    it('Should return error', async () => {
       const QuotesEmpty = (
         await sendQuery(
-          `query{getQuotesByTimestamp(timestamp:${122}){name timestamp price}}`,
+          `query{getQuotesByTimestamp(timestamp:${12222}){name timestamp price}}`,
         )
-      ).body.data.getQuotesByTimestamp;
+      ).body.errors[0].message;
 
-      expect(QuotesEmpty).toEqual([]);
+      expect(QuotesEmpty).toBe('No records for this timestamp');
     });
   });
 
@@ -169,6 +169,12 @@ describe('GraphQL AppResolver ', () => {
           `query{getQuotesByName(name:"TSL"){name timestamp price}}`,
         )
       ).body.data.getQuotesByName;
+
+      (
+        await sendQuery(
+          `mutation{createTicker(newTicker:{name:"ZZZ" fullName:"Zzzzzz"}){name fullName}}`,
+        )
+      ).body.data.createTicker;
     });
 
     it('Should be defined', async () => {
@@ -193,11 +199,21 @@ describe('GraphQL AppResolver ', () => {
     it('Should return empty array', async () => {
       const QuotesEmpty = (
         await sendQuery(
-          `query{getQuotesByName(name:"TSLA"){name timestamp price}}`,
+          `query{getQuotesByName(name:"ZZZ"){name timestamp price}}`,
         )
       ).body.data.getQuotesByName;
 
       expect(QuotesEmpty).toEqual([]);
+    });
+
+    it('Should return error', async () => {
+      const QuotesEmpty = (
+        await sendQuery(
+          `query{getQuotesByName(name:"TSLAAA"){name timestamp price}}`,
+        )
+      ).body.errors[0].message;
+
+      expect(QuotesEmpty).toBe('There is no ticker with this name');
     });
   });
 

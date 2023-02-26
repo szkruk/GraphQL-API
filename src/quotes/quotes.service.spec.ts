@@ -33,7 +33,7 @@ describe('QuotesService', () => {
             port: +configService.get('POSTGRES_PORT'),
             username: configService.get('POSTGRES_USER'),
             password: configService.get('POSTGRES_PASSWORD'),
-            database: 'postgres',
+            database: configService.get('POSTGRES_NAME'),
             entities: [QuoteEntity, TickerEntity],
             synchronize: true,
           }),
@@ -181,6 +181,12 @@ describe('QuotesService', () => {
         },
       ]);
     });
+
+    it('Should return a error', async () => {
+      await expect(service.findAllByTimestamp(1222)).rejects.toThrow(
+        'No records for this timestamp',
+      );
+    });
   });
 
   describe('Get quotes by Name', () => {
@@ -213,6 +219,12 @@ describe('QuotesService', () => {
           price: 12.3,
         },
       ]);
+    });
+
+    it('Should return a error', async () => {
+      await expect(service.findAllByName('AAA')).rejects.toThrow(
+        'There is no ticker with this name',
+      );
     });
   });
 

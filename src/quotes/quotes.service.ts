@@ -7,6 +7,7 @@ import { CreateQuoteInput } from './dto/create-quote.input';
 import { QuoteEntity } from '././entities/quote.entity';
 import { QuoteModel } from './model/quote.model';
 import { DatabaseException } from '../common/database.exception';
+import { TickerModel } from '../tickers/model/ticker.model';
 
 @Injectable()
 export class QuotesService {
@@ -55,23 +56,57 @@ export class QuotesService {
 
   async findAllByTimestamp(timestamp: number): Promise<QuoteModel[]> {
     try {
-      const quotes: QuoteModel[] = await this.quotesRepository.findBy({
-        timestamp: timestamp,
-      });
+      const quotes: QuoteModel[] = await this.quotesRepository.manager.findBy(
+        QuoteEntity,
+        {
+          timestamp: timestamp,
+        },
+      );
+      if (quotes.length == 0) {
+        throw new BadRequestException('No records for this timestamp', {
+          cause: new Error(),
+          description: 'There are not any qoutes with this timestamp.',
+        });
+      }
       return quotes;
-    } catch {
-      throw new DatabaseException();
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
   async findAllByName(name: string): Promise<QuoteModel[]> {
     try {
-      const quotes: QuoteModel[] = await this.quotesRepository.findBy({
-        name: name,
-      });
-      return quotes;
-    } catch {
-      throw new DatabaseException();
+      const ticker: TickerModel = await this.quotesRepository.manager.findOne(
+        TickerEntity,
+        {
+          where: {
+            name: name,
+          },
+        },
+      );
+      let qoutes: QuoteModel[];
+      if (ticker == null) {
+        throw new BadRequestException('There is no ticker with this name', {
+          cause: new Error(),
+          description: 'There is no ticker with this name. Check your name.',
+        });
+      } else {
+        qoutes = await this.quotesRepository.manager.findBy(QuoteEntity, {
+          name: name,
+        });
+      }
+
+      return qoutes;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 

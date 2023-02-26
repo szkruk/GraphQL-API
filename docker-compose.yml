@@ -7,8 +7,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: szymonkruk321
       POSTGRES_DB: postgres
-    volumes:
-      - ./data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
     networks:
