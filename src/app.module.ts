@@ -2,16 +2,16 @@ import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
-import { QuotesModule } from './quotes/quotes.module';
+import { QuotesModule } from './Quotes/Quotes.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TickersModule } from './tickers/tickers.module';
+import { TickersModule } from './Tickers/Tickers.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { QuoteEntity } from './quotes/entities/quote.entity';
-import { TickerEntity } from './tickers/entities/ticker.entity';
+import { QuoteEntity } from './Quotes/entities/Quote.entity';
+import { TickerEntity } from './Tickers/entities/Ticker.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: 'src/env/.env',
+      envFilePath: 'env/.env',
     }),
 
     GraphQLModule.forRoot<ApolloDriverConfig>({

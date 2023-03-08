@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TickersService } from './tickers.service';
-import { TickersResolver } from './tickers.resolver';
-import { TickerEntity } from './entities/ticker.entity';
+import { TickersService } from './Tickers.service';
+import { TickersResolver } from './Tickers.resolver';
+import { TickerEntity } from './entities/Ticker.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QuoteEntity } from '../quotes/entities/quote.entity';
+import { QuoteEntity } from '../Quotes/entities/Quote.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([TickerEntity, QuoteEntity])],

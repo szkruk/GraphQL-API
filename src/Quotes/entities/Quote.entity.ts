@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
-import { TickerEntity } from '../../tickers/entities/ticker.entity';
+import { TickerEntity } from '../../Tickers/entities/Ticker.entity';
 
 @Entity('Quote')
 export class QuoteEntity {

@@ -1,8 +1,8 @@
 import { Args, Mutation, Query, Int, Resolver } from '@nestjs/graphql';
-import { CreateQuoteInput } from './dto/create-quote.input';
+import { CreateQuoteInput } from './dto/Create-Quote.input';
 
-import { QuoteModel } from './model/quote.model';
-import { QuotesService } from './quotes.service';
+import { QuoteModel } from './model/Quote.model';
+import { QuotesService } from './Quotes.service';
 
 @Resolver((of) => QuoteModel)
 export class QuotesResolver {

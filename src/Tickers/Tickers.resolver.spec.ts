@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TickersResolver } from './tickers.resolver';
-import { TickersService } from './tickers.service';
-import { TickerModel } from './model/ticker.model';
-import { CreateTickerInput } from './dto/create-ticker.input';
+import { TickersResolver } from './Tickers.resolver';
+import { TickersService } from './Tickers.service';
+import { TickerModel } from './model/Ticker.model';
+import { CreateTickerInput } from './dto/Create-Ticker.input';
 
 describe('TickersResolver', () => {
   let resolver: TickersResolver;

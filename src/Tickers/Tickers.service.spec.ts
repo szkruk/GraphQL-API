@@ -2,10 +2,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateTickerInput } from './dto/create-ticker.input';
-import { TickerEntity } from './entities/ticker.entity';
-import { TickerModel } from './model/ticker.model';
-import { TickersService } from './tickers.service';
+import { CreateTickerInput } from './dto/Create-Ticker.input';
+import { TickerEntity } from './entities/Ticker.entity';
+import { TickerModel } from './model/Ticker.model';
+import { TickersService } from './Tickers.service';
 
 describe('TickersService', () => {
   let service: TickersService;

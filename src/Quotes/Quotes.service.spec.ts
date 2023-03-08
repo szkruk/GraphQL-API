@@ -2,12 +2,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TickerEntity } from '../tickers/entities/ticker.entity';
-import { TickersModule } from '../tickers/tickers.module';
-import { CreateQuoteInput } from './dto/create-quote.input';
-import { QuoteEntity } from './entities/quote.entity';
-import { QuoteModel } from './model/quote.model';
-import { QuotesService } from './quotes.service';
+import { TickerEntity } from '../Tickers/entities/Ticker.entity';
+import { TickersModule } from '../Tickers/Tickers.module';
+import { CreateQuoteInput } from './dto/Create-Quote.input';
+import { QuoteEntity } from './entities/Quote.entity';
+import { QuoteModel } from './model/Quote.model';
+import { QuotesService } from './Quotes.service';
 
 describe('QuotesService', () => {
   let service: QuotesService;

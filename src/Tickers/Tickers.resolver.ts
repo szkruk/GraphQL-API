@@ -1,7 +1,7 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { TickersService } from './tickers.service';
-import { CreateTickerInput } from './dto/create-ticker.input';
-import { TickerModel } from './model/ticker.model';
+import { TickersService } from './Tickers.service';
+import { CreateTickerInput } from './dto/Create-Ticker.input';
+import { TickerModel } from './model/Ticker.model';
 
 @Resolver((of) => TickerModel)
 export class TickersResolver {

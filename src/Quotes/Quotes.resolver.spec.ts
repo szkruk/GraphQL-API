@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { QuotesResolver } from './quotes.resolver';
-import { QuotesService } from './quotes.service';
-import { QuoteModel } from './model/quote.model';
-import { CreateQuoteInput } from './dto/create-quote.input';
+import { QuotesResolver } from './Quotes.resolver';
+import { QuotesService } from './Quotes.service';
+import { QuoteModel } from './model/Quote.model';
+import { CreateQuoteInput } from './dto/Create-Quote.input';
 
 describe('QuotesResolver', () => {
   let resolver: QuotesResolver;

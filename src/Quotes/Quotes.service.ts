@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm/dist/common';
-import { TickerEntity } from '../tickers/entities/ticker.entity';
-import { TickersService } from '../tickers/tickers.service';
+import { TickerEntity } from '../Tickers/entities/Ticker.entity';
+import { TickersService } from '../Tickers/Tickers.service';
 import { Repository } from 'typeorm/repository/Repository';
-import { CreateQuoteInput } from './dto/create-quote.input';
-import { QuoteEntity } from '././entities/quote.entity';
-import { QuoteModel } from './model/quote.model';
+import { CreateQuoteInput } from './dto/Create-Quote.input';
+import { QuoteEntity } from './entities/Quote.entity';
+import { QuoteModel } from './model/Quote.model';
 import { DatabaseException } from '../common/database.exception';
-import { TickerModel } from '../tickers/model/ticker.model';
+import { TickerModel } from '../Tickers/model/Ticker.model';
 
 @Injectable()
 export class QuotesService {
@@ -178,7 +178,7 @@ export class QuotesService {
         },
       });
 
-      if (Quote !== null) {
+      if (Quote != null) {
         await this.quotesRepository.update(
           {
             name: createQuoteInput.name,
@@ -217,7 +217,7 @@ export class QuotesService {
       this.quotesRepository.manager.connection.createQueryRunner();
 
     try {
-      queryRunner.startTransaction('SERIALIZABLE');
+      await queryRunner.startTransaction('SERIALIZABLE');
 
       const Quote = await queryRunner.manager.findOne(QuoteEntity, {
         where: {

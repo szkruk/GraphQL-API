@@ -2,9 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DatabaseException } from '../common/database.exception';
-import { CreateTickerInput } from './dto/create-ticker.input';
-import { TickerEntity } from './entities/ticker.entity';
-import { TickerModel } from './model/ticker.model';
+import { CreateTickerInput } from './dto/Create-Ticker.input';
+import { TickerEntity } from './entities/Ticker.entity';
+import { TickerModel } from './model/Ticker.model';
 
 @Injectable()
 export class TickersService {
@@ -143,7 +143,7 @@ export class TickersService {
         },
       });
 
-      if (Ticker !== null) {
+      if (Ticker != null) {
         await this.tickersRepository.update(
           {
             name: createTickerInput.name,
