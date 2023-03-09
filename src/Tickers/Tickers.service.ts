@@ -36,7 +36,6 @@ export class TickersService {
         })) != null
       ) {
         throw new BadRequestException('Ticker already exists', {
-          cause: new Error(),
           description: 'You are trying to create ticker, which already exists.',
         });
       }
@@ -57,7 +56,7 @@ export class TickersService {
       if (error instanceof BadRequestException) {
         throw error;
       } else {
-        throw error;
+        throw new DatabaseException();
       }
     }
   }
@@ -75,7 +74,6 @@ export class TickersService {
 
       if (Ticker == null) {
         throw new BadRequestException('Ticker not found', {
-          cause: new Error(),
           description: 'Ticker with this name doesnt exist',
         });
       }
@@ -104,7 +102,6 @@ export class TickersService {
       });
       if (Ticker == null) {
         throw new BadRequestException('Value not founded', {
-          cause: new Error(),
           description: 'There is not ticker with this name.',
         });
       } else {
@@ -152,7 +149,6 @@ export class TickersService {
         );
       } else {
         throw new BadRequestException('There is no ticker like this', {
-          cause: new Error(),
           description: 'There is no ticker like this.',
         });
       }

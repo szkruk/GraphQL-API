@@ -6,6 +6,7 @@ import { CreateQuoteInput } from './dto/Create-Quote.input';
 
 describe('QuotesResolver', () => {
   let resolver: QuotesResolver;
+  let quotesService: QuotesService;
 
   const Quotes: QuoteModel[] = [
     {
@@ -25,261 +26,224 @@ describe('QuotesResolver', () => {
     },
   ];
 
-  const mockQuoteService = {
-    findAll: jest.fn(() => {
-      return Promise.resolve(Quotes);
-    }),
-
-    findOne: jest.fn((name: string, timestamp: number) => {
-      return Promise.resolve({
-        name: name,
-        timestamp: timestamp,
-        price: expect.any(Number),
-      });
-    }),
-
-    findAllByName: jest.fn((name: string) => {
-      return Promise.resolve([
-        {
-          name: 'TSL',
-          timestamp: 1241,
-          price: 1.23,
-        },
-        {
-          name: 'TSL',
-          timestamp: 1242,
-          price: 1.23,
-        },
-      ]);
-    }),
-
-    findAllByTimestamp: jest.fn(() => {
-      return Promise.resolve([
-        {
-          name: 'TSL',
-          timestamp: 1241,
-          price: 1.23,
-        },
-        {
-          name: 'INTC',
-          timestamp: 1241,
-          price: 1.24,
-        },
-      ]);
-    }),
-
-    createQuote: jest.fn((createQuoteInput: CreateQuoteInput) => {
-      return Promise.resolve({
-        ...createQuoteInput,
-      });
-    }),
-
-    deleteQuote: jest.fn((name: string, timestamp: number) => {
-      return Promise.resolve({
-        name: name,
-        timestamp: timestamp,
-        price: expect.any(Number),
-      });
-    }),
-
-    update: jest.fn((createQuoteInput: CreateQuoteInput) => {
-      return Promise.resolve({
-        ...createQuoteInput,
-      });
-    }),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [QuotesResolver, QuotesService],
-    })
-      .overrideProvider(QuotesService)
-      .useValue(mockQuoteService)
-      .compile();
+      providers: [
+        QuotesResolver,
+        {
+          provide: QuotesService,
+          useValue: {
+            findAll: jest.fn(),
+            findAllByName: jest.fn(),
+            findOne: jest.fn(),
+            findAllByTimestamp: jest.fn(),
+            createQuote: jest.fn(),
+            deleteQuote: jest.fn(),
+            update: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
 
     resolver = module.get<QuotesResolver>(QuotesResolver);
+    quotesService = module.get<QuotesService>(QuotesService);
   });
 
   it('Should be defined', () => {
     expect(resolver).toBeDefined();
   });
 
-  describe('Get all quotes', () => {
-    let Quotes: QuoteModel[];
-    beforeAll(async () => {
-      Quotes = await resolver.findAllQuotes();
-    });
+  it('Should be defined', () => {
+    expect(quotesService).toBeDefined();
+  });
 
+  describe('Get all quotes', () => {
     it('Should return array of quotes', async () => {
-      expect(Array.isArray(Quotes)).toBe(true);
+      jest.spyOn(quotesService, 'findAll').mockResolvedValue(Quotes);
+
+      const quotes = await resolver.findAllQuotes();
+      expect(Array.isArray(quotes)).toBe(true);
     });
 
     it('Should return array with length equal to 3', async () => {
-      expect(Quotes.length).toEqual(3);
+      jest.spyOn(quotesService, 'findAll').mockResolvedValue(Quotes);
+      expect((await resolver.findAllQuotes()).length).toEqual(3);
     });
 
     it('Should return three quotes', async () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 1241,
-          price: 1.23,
-        },
-        {
-          name: 'TSL',
-          timestamp: 1242,
-          price: 1.23,
-        },
-        {
-          name: 'INTC',
-          timestamp: 1241,
-          price: 1.24,
-        },
-      ]);
+      jest.spyOn(quotesService, 'findAll').mockResolvedValue(Quotes);
+
+      expect(await resolver.findAllQuotes()).toEqual(Quotes);
     });
   });
 
   describe('Get one Quote', () => {
-    let Quote: QuoteModel;
-    beforeAll(async () => {
-      Quote = await resolver.findOneQuote('TSL', 1231);
+    const Quote = {
+      name: 'TSL',
+      timestamp: 1242,
+      price: 1.23,
+    };
+
+    it('Should be defined', async () => {
+      jest.spyOn(quotesService, 'findOne').mockResolvedValue(Quote);
+
+      expect(
+        await resolver.findOneQuote(Quote.name, Quote.timestamp),
+      ).toBeDefined();
     });
 
-    it('Should be defined', () => {
-      expect(Quote).toBeDefined();
-    });
+    it('Should return quote ', async () => {
+      jest.spyOn(quotesService, 'findOne').mockResolvedValue(Quote);
 
-    it('Should return quote ', () => {
-      expect(Quote).toEqual({
-        name: 'TSL',
-        timestamp: 1231,
-        price: expect.any(Number),
-      });
+      expect(await resolver.findOneQuote(Quote.name, Quote.timestamp)).toEqual(
+        Quote,
+      );
     });
   });
 
   describe('Get quotes by Name', () => {
-    let Quotes: QuoteModel[];
-    beforeAll(async () => {
-      Quotes = await resolver.findAllQuotesByName('TSL');
-    });
+    const QuotesByName: QuoteModel[] = [
+      {
+        name: 'TSL',
+        timestamp: 1241,
+        price: 1.23,
+      },
+      {
+        name: 'TSL',
+        timestamp: 1242,
+        price: 1.23,
+      },
+    ];
 
-    it('Should return array', () => {
-      expect(Array.isArray(Quotes));
+    it('Should return array', async () => {
+      jest
+        .spyOn(quotesService, 'findAllByName')
+        .mockResolvedValue(QuotesByName);
+
+      const quotes = await resolver.findAllQuotesByName('TSL');
+      expect(Array.isArray(quotes)).toBe(true);
     });
 
     it('Should return array with length equal to 2', async () => {
-      expect(Quotes.length).toEqual(2);
+      jest
+        .spyOn(quotesService, 'findAllByName')
+        .mockResolvedValue(QuotesByName);
+
+      expect((await resolver.findAllQuotesByName('TSL')).length).toEqual(2);
     });
 
-    it('Should return quotes with same name ', () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 1241,
-          price: 1.23,
-        },
-        {
-          name: 'TSL',
-          timestamp: 1242,
-          price: 1.23,
-        },
-      ]);
+    it('Should return quotes with same name ', async () => {
+      jest
+        .spyOn(quotesService, 'findAllByName')
+        .mockResolvedValue(QuotesByName);
+
+      expect(await resolver.findAllQuotesByName('TSL')).toEqual(QuotesByName);
     });
   });
 
   describe('Get quotes by Timestamp', () => {
-    let Quotes: QuoteModel[];
-    beforeAll(async () => {
-      Quotes = await resolver.findAllQuotesByTimestamp(1241);
-    });
+    const QuotesByTimeStamp: QuoteModel[] = [
+      {
+        name: 'TSL',
+        timestamp: 1241,
+        price: 1.23,
+      },
+      {
+        name: 'INTC',
+        timestamp: 1241,
+        price: 1.24,
+      },
+    ];
 
-    it('Should return array', () => {
-      expect(Array.isArray(Quotes));
+    it('Should return array', async () => {
+      jest
+        .spyOn(quotesService, 'findAllByTimestamp')
+        .mockResolvedValue(QuotesByTimeStamp);
+
+      const quotes = await resolver.findAllQuotesByTimestamp(1241);
+      expect(Array.isArray(quotes)).toBe(true);
     });
 
     it('Should return array with length equal to 2', async () => {
-      expect(Quotes.length).toEqual(2);
+      jest
+        .spyOn(quotesService, 'findAllByTimestamp')
+        .mockResolvedValue(QuotesByTimeStamp);
+
+      expect((await resolver.findAllQuotesByTimestamp(1241)).length).toEqual(2);
     });
 
-    it('Should return quotes with same timestamp ', () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 1241,
-          price: 1.23,
-        },
-        {
-          name: 'INTC',
-          timestamp: 1241,
-          price: 1.24,
-        },
-      ]);
+    it('Should return quotes with same timestamp ', async () => {
+      jest
+        .spyOn(quotesService, 'findAllByTimestamp')
+        .mockResolvedValue(QuotesByTimeStamp);
+
+      expect(await resolver.findAllQuotesByTimestamp(1241)).toEqual(
+        QuotesByTimeStamp,
+      );
     });
   });
 
   describe('Create quote', () => {
-    let Quote: QuoteModel;
-    beforeAll(async () => {
-      Quote = await resolver.createQuote({
-        name: 'TSL',
-        timestamp: 123,
-        price: 12.3,
-      });
+    const CreatedQuote = {
+      name: 'TSL',
+      timestamp: 123,
+      price: 12.3,
+    };
+
+    it('Should be defined', async () => {
+      jest.spyOn(quotesService, 'createQuote').mockResolvedValue(CreatedQuote);
+
+      expect(await resolver.createQuote(CreatedQuote)).toBeDefined();
     });
 
-    it('Should be defined', () => {
-      expect(Quote).toBeDefined();
-    });
+    it('Should return created quote', async () => {
+      jest.spyOn(quotesService, 'createQuote').mockResolvedValue(CreatedQuote);
 
-    it('Should return created quote', () => {
-      expect(Quote).toEqual({
-        name: 'TSL',
-        timestamp: 123,
-        price: 12.3,
-      });
+      expect(await resolver.createQuote(CreatedQuote)).toEqual(CreatedQuote);
     });
   });
 
   describe('Update quote', () => {
-    let Quote: QuoteModel;
-    beforeAll(async () => {
-      Quote = await resolver.updateQuote({
-        name: 'TSL',
-        timestamp: 123,
-        price: 12.3,
-      });
+    const UpdatedQuote = {
+      name: 'TSL',
+      timestamp: 123,
+      price: 12.3,
+    };
+
+    it('Should be defined', async () => {
+      jest.spyOn(quotesService, 'update').mockResolvedValue(UpdatedQuote);
+
+      expect(await resolver.updateQuote(UpdatedQuote)).toBeDefined();
     });
 
-    it('Should be defined', () => {
-      expect(Quote).toBeDefined();
-    });
+    it('Should return updated quote', async () => {
+      jest.spyOn(quotesService, 'update').mockResolvedValue(UpdatedQuote);
 
-    it('Should return updated quote', () => {
-      expect(Quote).toEqual({
-        name: 'TSL',
-        timestamp: 123,
-        price: 12.3,
-      });
+      expect(await resolver.updateQuote(UpdatedQuote)).toEqual(UpdatedQuote);
     });
   });
 
   describe('Delete quote', () => {
-    let Quote: QuoteModel;
-    beforeAll(async () => {
-      Quote = await resolver.deleteQuote('TSL', 123);
+    const DeletedQuote = {
+      name: 'TSL',
+      timestamp: 123,
+      price: 12.3,
+    };
+
+    it('Should be defined', async () => {
+      jest.spyOn(quotesService, 'deleteQuote').mockResolvedValue(DeletedQuote);
+
+      expect(
+        await resolver.deleteQuote(DeletedQuote.name, DeletedQuote.timestamp),
+      ).toBeDefined();
     });
 
-    it('Should be defined', () => {
-      expect(Quote).toBeDefined();
-    });
+    it('Should return deleted quote', async () => {
+      jest.spyOn(quotesService, 'deleteQuote').mockResolvedValue(DeletedQuote);
 
-    it('Should return deleted quote', () => {
-      expect(Quote).toEqual({
-        name: 'TSL',
-        timestamp: 123,
-        price: expect.any(Number),
-      });
+      expect(
+        await resolver.deleteQuote(DeletedQuote.name, DeletedQuote.timestamp),
+      ).toEqual(DeletedQuote);
     });
   });
 });

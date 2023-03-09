@@ -18,7 +18,7 @@ describe('QuotesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
-          envFilePath: 'src/env/.env',
+          envFilePath: 'env/.env',
         }),
         TickersModule,
 

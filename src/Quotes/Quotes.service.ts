@@ -39,7 +39,6 @@ export class QuotesService {
 
       if (Quote == null) {
         throw new BadRequestException('Value not founded', {
-          cause: new Error(),
           description: 'There is not qoute with this name and timestamp.',
         });
       }
@@ -64,7 +63,6 @@ export class QuotesService {
       );
       if (quotes.length == 0) {
         throw new BadRequestException('No records for this timestamp', {
-          cause: new Error(),
           description: 'There are not any qoutes with this timestamp.',
         });
       }
@@ -91,7 +89,6 @@ export class QuotesService {
       let qoutes: QuoteModel[];
       if (ticker == null) {
         throw new BadRequestException('There is no ticker with this name', {
-          cause: new Error(),
           description: 'There is no ticker with this name. Check your name.',
         });
       } else {
@@ -126,7 +123,6 @@ export class QuotesService {
         })) != null
       ) {
         throw new BadRequestException('Qoute already exists', {
-          cause: new Error(),
           description: 'There is a quote with same name and timestamp.',
         });
       }
@@ -188,7 +184,6 @@ export class QuotesService {
         );
       } else {
         throw new BadRequestException("Quote doesn't exists", {
-          cause: new Error(),
           description: "Quote with this name and timestamp doesn't exists.",
         });
       }
@@ -228,7 +223,6 @@ export class QuotesService {
 
       if (Quote == null) {
         throw new BadRequestException("Quote doesn't exists", {
-          cause: new Error(),
           description: "You can't delete quote which doesn't exist",
         });
       } else {
