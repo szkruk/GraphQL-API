@@ -1,48 +1,42 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { DatabaseException } from '../common/database.exception';
+import { DataSourceManager } from '../common/transaction';
 import { CreateTickerInput } from './dto/Create-Ticker.input';
 import { TickerEntity } from './entities/Ticker.entity';
 import { TickerModel } from './model/Ticker.model';
 
 @Injectable()
 export class TickersService {
-  constructor(
-    @InjectRepository(TickerEntity)
-    private tickersRepository: Repository<TickerEntity>,
-  ) {}
+  private dataSourceManager: DataSourceManager;
+
+  constructor(private readonly dataSource: DataSource) {
+    this.dataSourceManager = new DataSourceManager(dataSource);
+  }
 
   async findAll(): Promise<TickerModel[]> {
-    const queryRunner =
-      this.tickersRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
-
+    await this.dataSourceManager.startConnection();
     try {
-      const Tickers = await queryRunner.manager.find(TickerEntity);
+      const Tickers = await this.dataSourceManager
+        .getManager()
+        .find(TickerEntity);
 
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       return Tickers;
     } catch {
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       throw new DatabaseException();
     }
   }
 
   async create(createTickerInput: CreateTickerInput): Promise<TickerModel> {
-    const queryRunner =
-      this.tickersRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startTransaction();
 
     try {
-      await queryRunner.startTransaction('SERIALIZABLE');
-
       if (
-        (await queryRunner.manager.findOne(TickerEntity, {
+        (await this.dataSourceManager.getManager().findOne(TickerEntity, {
           where: {
             name: createTickerInput.name,
           },
@@ -53,19 +47,15 @@ export class TickersService {
         });
       }
 
-      await queryRunner.manager.insert(TickerEntity, {
+      await this.dataSourceManager.getManager().insert(TickerEntity, {
         ...createTickerInput,
       });
 
-      await queryRunner.commitTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.commitTransaction();
 
       return createTickerInput;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.rollbackTransaction();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -76,29 +66,27 @@ export class TickersService {
   }
 
   async findOne(name: string): Promise<TickerModel> {
-    const queryRunner =
-      this.tickersRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startConnection();
 
     try {
-      const Ticker = await queryRunner.manager.findOne(TickerEntity, {
-        where: {
-          name: name,
-        },
-      });
-
+      const Ticker = await this.dataSourceManager
+        .getManager()
+        .findOne(TickerEntity, {
+          where: {
+            name: name,
+          },
+        });
       if (Ticker == null) {
         throw new BadRequestException('Ticker not found', {
           description: 'Ticker with this name doesnt exist',
         });
       }
 
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       return Ticker;
     } catch (error) {
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -109,35 +97,30 @@ export class TickersService {
   }
 
   async deleteTicker(name: string): Promise<TickerModel> {
-    const queryRunner =
-      this.tickersRepository.manager.connection.createQueryRunner();
-    await queryRunner.connect();
+    await this.dataSourceManager.startTransaction();
 
     try {
-      await queryRunner.startTransaction('SERIALIZABLE');
+      const Ticker = await this.dataSourceManager
+        .getManager()
+        .findOne(TickerEntity, {
+          where: {
+            name: name,
+          },
+        });
 
-      const Ticker = await queryRunner.manager.findOne(TickerEntity, {
-        where: {
-          name: name,
-        },
-      });
       if (Ticker == null) {
         throw new BadRequestException('Value not founded', {
           description: 'There is not ticker with this name.',
         });
       } else {
-        await queryRunner.manager.delete(TickerEntity, { ...Ticker });
+        await this.dataSourceManager
+          .getManager()
+          .delete(TickerEntity, { ...Ticker });
       }
-
-      await queryRunner.commitTransaction();
-
-      await queryRunner.release();
-
+      await this.dataSourceManager.commitTransaction();
       return Ticker;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.rollbackTransaction();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -150,21 +133,19 @@ export class TickersService {
   async updateTicker(
     createTickerInput: CreateTickerInput,
   ): Promise<TickerModel> {
-    const queryRunner =
-      this.tickersRepository.manager.connection.createQueryRunner();
-    await queryRunner.connect();
+    await this.dataSourceManager.startTransaction();
 
     try {
-      await queryRunner.startTransaction('SERIALIZABLE');
-
-      const Ticker = await queryRunner.manager.findOne(TickerEntity, {
-        where: {
-          name: createTickerInput.name,
-        },
-      });
+      const Ticker = await this.dataSourceManager
+        .getManager()
+        .findOne(TickerEntity, {
+          where: {
+            name: createTickerInput.name,
+          },
+        });
 
       if (Ticker != null) {
-        await queryRunner.manager.update(
+        await this.dataSourceManager.getManager().update(
           TickerEntity,
           {
             name: createTickerInput.name,
@@ -177,15 +158,11 @@ export class TickersService {
         });
       }
 
-      await queryRunner.commitTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.commitTransaction();
 
       return createTickerInput;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.rollbackTransaction();
 
       if (error instanceof BadRequestException) {
         throw error;

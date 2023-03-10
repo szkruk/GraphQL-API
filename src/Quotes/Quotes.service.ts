@@ -1,63 +1,63 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm/dist/common';
 import { TickerEntity } from '../Tickers/entities/Ticker.entity';
-import { Repository } from 'typeorm/repository/Repository';
 import { CreateQuoteInput } from './dto/Create-Quote.input';
 import { QuoteEntity } from './entities/Quote.entity';
 import { QuoteModel } from './model/Quote.model';
 import { DatabaseException } from '../common/database.exception';
 import { TickerModel } from '../Tickers/model/Ticker.model';
+import { DataSourceManager } from '../common/transaction';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class QuotesService {
-  constructor(
-    @InjectRepository(QuoteEntity)
-    private quotesRepository: Repository<QuoteEntity>,
-  ) {}
+  private dataSourceManager: DataSourceManager;
+
+  constructor(private readonly dataSource: DataSource) {
+    this.dataSourceManager = new DataSourceManager(dataSource);
+  }
 
   async findAll(): Promise<QuoteModel[]> {
-    const queryRunner =
-      this.quotesRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startConnection();
 
     try {
-      const Quotes = await queryRunner.manager.find(QuoteEntity);
+      const Quotes = await this.dataSourceManager
+        .getManager()
+        .find(QuoteEntity);
 
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       return Quotes;
     } catch {
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       throw new DatabaseException();
     }
   }
 
   async findOne(name: string, timestamp: number): Promise<QuoteModel> {
-    const queryRunner =
-      this.quotesRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startConnection();
 
     try {
-      const Quote: QuoteModel = await queryRunner.manager.findOne(QuoteEntity, {
-        where: {
-          name: name,
-          timestamp: timestamp,
-        },
-      });
+      const Quote: QuoteModel = await this.dataSourceManager
+        .getManager()
+        .findOne(QuoteEntity, {
+          where: {
+            name: name,
+            timestamp: timestamp,
+          },
+        });
 
       if (Quote == null) {
         throw new BadRequestException('Value not founded', {
           description: 'There is not qoute with this name and timestamp.',
         });
       }
-      await queryRunner.release();
+
+      await this.dataSourceManager.releaseConnection();
 
       return Quote;
     } catch (error) {
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -68,29 +68,25 @@ export class QuotesService {
   }
 
   async findAllByTimestamp(timestamp: number): Promise<QuoteModel[]> {
-    const queryRunner =
-      this.quotesRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startConnection();
 
     try {
-      const quotes: QuoteModel[] = await queryRunner.manager.findBy(
-        QuoteEntity,
-        {
+      const quotes: QuoteModel[] = await this.dataSourceManager
+        .getManager()
+        .findBy(QuoteEntity, {
           timestamp: timestamp,
-        },
-      );
+        });
       if (quotes.length == 0) {
         throw new BadRequestException('No records for this timestamp', {
           description: 'There are not any qoutes with this timestamp.',
         });
       }
 
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       return quotes;
     } catch (error) {
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -101,20 +97,16 @@ export class QuotesService {
   }
 
   async findAllByName(name: string): Promise<QuoteModel[]> {
-    const queryRunner =
-      this.quotesRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startConnection();
 
     try {
-      const ticker: TickerModel = await queryRunner.manager.findOne(
-        TickerEntity,
-        {
+      const ticker: TickerModel = await this.dataSourceManager
+        .getManager()
+        .findOne(TickerEntity, {
           where: {
             name: name,
           },
-        },
-      );
+        });
       let qoutes: QuoteModel[];
 
       if (ticker == null) {
@@ -122,15 +114,15 @@ export class QuotesService {
           description: 'There is no ticker with this name. Check your name.',
         });
       } else {
-        qoutes = await queryRunner.manager.findBy(QuoteEntity, {
+        qoutes = await this.dataSourceManager.getManager().findBy(QuoteEntity, {
           name: name,
         });
       }
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       return qoutes;
     } catch (error) {
-      await queryRunner.release();
+      await this.dataSourceManager.releaseConnection();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -141,16 +133,11 @@ export class QuotesService {
   }
 
   async createQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
-    const queryRunner =
-      this.quotesRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startTransaction();
 
     try {
-      await queryRunner.startTransaction('SERIALIZABLE');
-
       if (
-        (await queryRunner.manager.findOne(QuoteEntity, {
+        (await this.dataSourceManager.getManager().findOne(QuoteEntity, {
           where: {
             name: createQuoteInput.name,
             timestamp: createQuoteInput.timestamp,
@@ -162,30 +149,27 @@ export class QuotesService {
         });
       }
       if (
-        (await queryRunner.manager.findOne(TickerEntity, {
+        (await this.dataSourceManager.getManager().findOne(TickerEntity, {
           where: {
             name: createQuoteInput.name,
           },
         })) == null
       ) {
-        await queryRunner.manager.insert(TickerEntity, {
+        await this.dataSourceManager.getManager().insert(TickerEntity, {
           name: createQuoteInput.name,
           fullName: 'unknown',
         });
       }
 
-      await queryRunner.manager.insert(QuoteEntity, {
+      await this.dataSourceManager.getManager().insert(QuoteEntity, {
         ...createQuoteInput,
       });
 
-      await queryRunner.commitTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.commitTransaction();
 
       return createQuoteInput;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      await queryRunner.release();
+      await this.dataSourceManager.rollbackTransaction();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -196,23 +180,20 @@ export class QuotesService {
   }
 
   async update(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
-    const queryRunner =
-      this.quotesRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    await this.dataSourceManager.startTransaction();
 
     try {
-      await queryRunner.startTransaction('SERIALIZABLE');
-
-      const Quote = await queryRunner.manager.findOne(QuoteEntity, {
-        where: {
-          name: createQuoteInput.name,
-          timestamp: createQuoteInput.timestamp,
-        },
-      });
+      const Quote = await this.dataSourceManager
+        .getManager()
+        .findOne(QuoteEntity, {
+          where: {
+            name: createQuoteInput.name,
+            timestamp: createQuoteInput.timestamp,
+          },
+        });
 
       if (Quote != null) {
-        await queryRunner.manager.update(
+        await this.dataSourceManager.getManager().update(
           QuoteEntity,
           {
             name: createQuoteInput.name,
@@ -226,15 +207,11 @@ export class QuotesService {
         });
       }
 
-      await queryRunner.commitTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.commitTransaction();
 
       return createQuoteInput;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.rollbackTransaction();
 
       if (error instanceof BadRequestException) {
         throw error;
@@ -245,38 +222,33 @@ export class QuotesService {
   }
 
   async deleteQuote(name: string, timestamp: number): Promise<QuoteModel> {
-    const queryRunner =
-      this.quotesRepository.manager.connection.createQueryRunner();
-
-    await queryRunner.connect();
+    const queryRunner = await this.dataSourceManager.startTransaction();
 
     try {
-      await queryRunner.startTransaction('SERIALIZABLE');
-
-      const Quote = await queryRunner.manager.findOne(QuoteEntity, {
-        where: {
-          name: name,
-          timestamp: timestamp,
-        },
-      });
+      const Quote = await this.dataSourceManager
+        .getManager()
+        .findOne(QuoteEntity, {
+          where: {
+            name: name,
+            timestamp: timestamp,
+          },
+        });
 
       if (Quote == null) {
         throw new BadRequestException("Quote doesn't exists", {
           description: "You can't delete quote which doesn't exist",
         });
       } else {
-        await queryRunner.manager.delete(QuoteEntity, { ...Quote });
+        await this.dataSourceManager
+          .getManager()
+          .delete(QuoteEntity, { ...Quote });
       }
 
-      await queryRunner.commitTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.commitTransaction();
 
       return Quote;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      await queryRunner.release();
+      await this.dataSourceManager.rollbackTransaction();
 
       if (error instanceof BadRequestException) {
         throw error;
