@@ -14,7 +14,7 @@ describe('QuotesService', () => {
 
   let repository: Repository<QuoteEntity>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -33,7 +33,7 @@ describe('QuotesService', () => {
             port: +configService.get('POSTGRES_PORT'),
             username: configService.get('POSTGRES_USER'),
             password: configService.get('POSTGRES_PASSWORD'),
-            database: configService.get('POSTGRES_NAME'),
+            database: 'postgres',
             entities: [QuoteEntity, TickerEntity],
             synchronize: true,
           }),

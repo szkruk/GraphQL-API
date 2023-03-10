@@ -133,7 +133,7 @@ export class QuotesService {
           },
         })) == null
       ) {
-        await this.tickersService.create({
+        await queryRunner.connection.manager.insert(TickerEntity, {
           name: createQuoteInput.name,
           fullName: 'unknown',
         });
