@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm/dist/common';
 import { TickerEntity } from '../Tickers/entities/Ticker.entity';
-import { TickersService } from '../Tickers/Tickers.service';
 import { Repository } from 'typeorm/repository/Repository';
 import { CreateQuoteInput } from './dto/Create-Quote.input';
 import { QuoteEntity } from './entities/Quote.entity';
@@ -14,37 +13,52 @@ export class QuotesService {
   constructor(
     @InjectRepository(QuoteEntity)
     private quotesRepository: Repository<QuoteEntity>,
-    private tickersService: TickersService,
   ) {}
 
   async findAll(): Promise<QuoteModel[]> {
+    const queryRunner =
+      this.quotesRepository.manager.connection.createQueryRunner();
+
+    await queryRunner.connect();
+
     try {
-      return await this.quotesRepository.find();
+      const Quotes = await queryRunner.manager.find(QuoteEntity);
+
+      await queryRunner.release();
+
+      return Quotes;
     } catch {
+      await queryRunner.release();
+
       throw new DatabaseException();
     }
   }
 
   async findOne(name: string, timestamp: number): Promise<QuoteModel> {
+    const queryRunner =
+      this.quotesRepository.manager.connection.createQueryRunner();
+
+    await queryRunner.connect();
+
     try {
-      const Quote: QuoteModel = await this.quotesRepository.manager.findOne(
-        QuoteEntity,
-        {
-          where: {
-            name: name,
-            timestamp: timestamp,
-          },
+      const Quote: QuoteModel = await queryRunner.manager.findOne(QuoteEntity, {
+        where: {
+          name: name,
+          timestamp: timestamp,
         },
-      );
+      });
 
       if (Quote == null) {
         throw new BadRequestException('Value not founded', {
           description: 'There is not qoute with this name and timestamp.',
         });
       }
+      await queryRunner.release();
 
       return Quote;
     } catch (error) {
+      await queryRunner.release();
+
       if (error instanceof BadRequestException) {
         throw error;
       } else {
@@ -54,8 +68,13 @@ export class QuotesService {
   }
 
   async findAllByTimestamp(timestamp: number): Promise<QuoteModel[]> {
+    const queryRunner =
+      this.quotesRepository.manager.connection.createQueryRunner();
+
+    await queryRunner.connect();
+
     try {
-      const quotes: QuoteModel[] = await this.quotesRepository.manager.findBy(
+      const quotes: QuoteModel[] = await queryRunner.manager.findBy(
         QuoteEntity,
         {
           timestamp: timestamp,
@@ -66,8 +85,13 @@ export class QuotesService {
           description: 'There are not any qoutes with this timestamp.',
         });
       }
+
+      await queryRunner.release();
+
       return quotes;
     } catch (error) {
+      await queryRunner.release();
+
       if (error instanceof BadRequestException) {
         throw error;
       } else {
@@ -77,8 +101,13 @@ export class QuotesService {
   }
 
   async findAllByName(name: string): Promise<QuoteModel[]> {
+    const queryRunner =
+      this.quotesRepository.manager.connection.createQueryRunner();
+
+    await queryRunner.connect();
+
     try {
-      const ticker: TickerModel = await this.quotesRepository.manager.findOne(
+      const ticker: TickerModel = await queryRunner.manager.findOne(
         TickerEntity,
         {
           where: {
@@ -87,18 +116,22 @@ export class QuotesService {
         },
       );
       let qoutes: QuoteModel[];
+
       if (ticker == null) {
         throw new BadRequestException('There is no ticker with this name', {
           description: 'There is no ticker with this name. Check your name.',
         });
       } else {
-        qoutes = await this.quotesRepository.manager.findBy(QuoteEntity, {
+        qoutes = await queryRunner.manager.findBy(QuoteEntity, {
           name: name,
         });
       }
+      await queryRunner.release();
 
       return qoutes;
     } catch (error) {
+      await queryRunner.release();
+
       if (error instanceof BadRequestException) {
         throw error;
       } else {
@@ -110,6 +143,8 @@ export class QuotesService {
   async createQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
     const queryRunner =
       this.quotesRepository.manager.connection.createQueryRunner();
+
+    await queryRunner.connect();
 
     try {
       await queryRunner.startTransaction('SERIALIZABLE');
@@ -133,21 +168,21 @@ export class QuotesService {
           },
         })) == null
       ) {
-        await queryRunner.connection.manager.insert(TickerEntity, {
+        await queryRunner.manager.insert(TickerEntity, {
           name: createQuoteInput.name,
           fullName: 'unknown',
         });
       }
 
-      const newQuote = this.quotesRepository.create(createQuoteInput);
-
-      await this.quotesRepository.save(newQuote);
+      await queryRunner.manager.insert(QuoteEntity, {
+        ...createQuoteInput,
+      });
 
       await queryRunner.commitTransaction();
 
       await queryRunner.release();
 
-      return newQuote;
+      return createQuoteInput;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
@@ -164,10 +199,12 @@ export class QuotesService {
     const queryRunner =
       this.quotesRepository.manager.connection.createQueryRunner();
 
+    await queryRunner.connect();
+
     try {
       await queryRunner.startTransaction('SERIALIZABLE');
 
-      const Quote = await this.quotesRepository.findOne({
+      const Quote = await queryRunner.manager.findOne(QuoteEntity, {
         where: {
           name: createQuoteInput.name,
           timestamp: createQuoteInput.timestamp,
@@ -175,25 +212,25 @@ export class QuotesService {
       });
 
       if (Quote != null) {
-        await this.quotesRepository.update(
+        await queryRunner.manager.update(
+          QuoteEntity,
           {
             name: createQuoteInput.name,
             timestamp: createQuoteInput.timestamp,
           },
-          { price: createQuoteInput.price },
+          { ...createQuoteInput },
         );
       } else {
         throw new BadRequestException("Quote doesn't exists", {
           description: "Quote with this name and timestamp doesn't exists.",
         });
       }
-      Quote.price = createQuoteInput.price;
 
       await queryRunner.commitTransaction();
 
       await queryRunner.release();
 
-      return Quote;
+      return createQuoteInput;
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -211,6 +248,8 @@ export class QuotesService {
     const queryRunner =
       this.quotesRepository.manager.connection.createQueryRunner();
 
+    await queryRunner.connect();
+
     try {
       await queryRunner.startTransaction('SERIALIZABLE');
 
@@ -226,7 +265,7 @@ export class QuotesService {
           description: "You can't delete quote which doesn't exist",
         });
       } else {
-        await this.quotesRepository.delete(Quote);
+        await queryRunner.manager.delete(QuoteEntity, { ...Quote });
       }
 
       await queryRunner.commitTransaction();
