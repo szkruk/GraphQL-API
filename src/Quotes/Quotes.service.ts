@@ -6,49 +6,43 @@ import { QuoteEntity } from './entities/Quote.entity';
 import { QuoteModel } from './model/Quote.model';
 import { DatabaseException } from '../common/Database.exception';
 import { TickerModel } from '../Tickers/model/Ticker.model';
-import { DataSourceManager } from '../common/DataSourceManager';
 import { DataSource } from 'typeorm';
+import { RequestLimitException } from '../common/Request-Limit.exception';
 
 @Injectable()
 export class QuotesService {
-  private dataSourceManager: DataSourceManager;
-
-  constructor(private readonly dataSource: DataSource) {
-    this.dataSourceManager = new DataSourceManager(dataSource);
-  }
+  constructor(private readonly dataSource: DataSource) {}
   private readonly maxAttempts = 5;
   private readonly delayMs = 1000;
 
   async findAll(): Promise<QuoteModel[]> {
-    await this.dataSourceManager.startConnection();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
     try {
-      const Quotes = await this.dataSourceManager
-        .getManager()
-        .find(QuoteEntity);
+      const Quotes = await queryRunner.manager.find(QuoteEntity);
 
-      await this.dataSourceManager.releaseConnection();
+      await queryRunner.manager.release();
 
       return Quotes;
     } catch {
-      await this.dataSourceManager.releaseConnection();
+      await queryRunner.manager.release();
 
       throw new DatabaseException();
     }
   }
 
   async findOne(name: string, timestamp: number): Promise<QuoteModel> {
-    await this.dataSourceManager.startConnection();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
     try {
-      const Quote: QuoteModel = await this.dataSourceManager
-        .getManager()
-        .findOne(QuoteEntity, {
-          where: {
-            name: name,
-            timestamp: timestamp,
-          },
-        });
+      const Quote: QuoteModel = await queryRunner.manager.findOne(QuoteEntity, {
+        where: {
+          name: name,
+          timestamp: timestamp,
+        },
+      });
 
       if (Quote == null) {
         throw new BadRequestException('Value not founded', {
@@ -56,48 +50,62 @@ export class QuotesService {
         });
       }
 
-      await this.dataSourceManager.releaseConnection();
+      await queryRunner.manager.release();
 
       return Quote;
     } catch (error) {
-      await this.dataSourceManager.throwDatabaseorBadRequestException(error);
+      await queryRunner.release();
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
   async findAllByTimestamp(timestamp: number): Promise<QuoteModel[]> {
-    await this.dataSourceManager.startConnection();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
     try {
-      const quotes: QuoteModel[] = await this.dataSourceManager
-        .getManager()
-        .findBy(QuoteEntity, {
+      const quotes: QuoteModel[] = await queryRunner.manager.findBy(
+        QuoteEntity,
+        {
           timestamp: timestamp,
-        });
+        },
+      );
       if (quotes.length == 0) {
         throw new BadRequestException('No records for this timestamp', {
           description: 'There are not any qoutes with this timestamp.',
         });
       }
 
-      await this.dataSourceManager.releaseConnection();
+      await queryRunner.manager.release();
 
       return quotes;
     } catch (error) {
-      await this.dataSourceManager.throwDatabaseorBadRequestException(error);
+      await queryRunner.release();
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
   async findAllByName(name: string): Promise<QuoteModel[]> {
-    await this.dataSourceManager.startConnection();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
     try {
-      const ticker: TickerModel = await this.dataSourceManager
-        .getManager()
-        .findOne(TickerEntity, {
+      const ticker: TickerModel = await queryRunner.manager.findOne(
+        TickerEntity,
+        {
           where: {
             name: name,
           },
-        });
+        },
+      );
       let qoutes: QuoteModel[];
 
       if (ticker == null) {
@@ -105,29 +113,35 @@ export class QuotesService {
           description: 'There is no ticker with this name. Check your name.',
         });
       } else {
-        qoutes = await this.dataSourceManager.getManager().findBy(QuoteEntity, {
+        qoutes = await queryRunner.manager.findBy(QuoteEntity, {
           name: name,
         });
       }
-      await this.dataSourceManager.releaseConnection();
+      await queryRunner.release();
 
       return qoutes;
     } catch (error) {
-      await this.dataSourceManager.throwDatabaseorBadRequestException(error);
+      await queryRunner.release();
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
   async createQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
-    await this.dataSourceManager.startConnection();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
     let attempt = 0;
 
     while (true) {
       try {
-        await this.dataSourceManager.startTransaction();
+        await queryRunner.startTransaction('SERIALIZABLE');
 
         if (
-          (await this.dataSourceManager.getManager().findOne(QuoteEntity, {
+          (await queryRunner.manager.findOne(QuoteEntity, {
             where: {
               name: createQuoteInput.name,
               timestamp: createQuoteInput.timestamp,
@@ -139,29 +153,48 @@ export class QuotesService {
           });
         }
         if (
-          (await this.dataSourceManager.getManager().findOne(TickerEntity, {
+          (await queryRunner.manager.findOne(TickerEntity, {
             where: {
               name: createQuoteInput.name,
             },
           })) == null
         ) {
-          await this.dataSourceManager.getManager().insert(TickerEntity, {
+          await queryRunner.manager.insert(TickerEntity, {
             name: createQuoteInput.name,
             fullName: 'unknown',
           });
         }
 
-        await this.dataSourceManager.getManager().insert(QuoteEntity, {
+        await queryRunner.manager.insert(QuoteEntity, {
           ...createQuoteInput,
         });
-
-        await this.dataSourceManager.commitTransaction();
+        await queryRunner.commitTransaction();
+        await queryRunner.release();
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        await this.dataSourceManager.checkForThrowingError(error, attempt);
+        if (error instanceof BadRequestException) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw error;
+        }
 
-        await this.dataSourceManager.rollbackAndWait(attempt);
+        if (error.code != '40001' && error.code != '23505') {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new DatabaseException();
+        }
+
+        if (attempt > this.maxAttempts) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new RequestLimitException();
+        }
+
+        await queryRunner.rollbackTransaction();
+        attempt += 1;
+
+        await new Promise((resolve) => setTimeout(resolve, this.delayMs));
       }
     }
 
@@ -169,24 +202,23 @@ export class QuotesService {
   }
 
   async update(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
-    await this.dataSourceManager.startConnection();
-
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
     let attempt = 0;
 
     while (true) {
       try {
-        await this.dataSourceManager.startTransaction();
-        const Quote = await this.dataSourceManager
-          .getManager()
-          .findOne(QuoteEntity, {
-            where: {
-              name: createQuoteInput.name,
-              timestamp: createQuoteInput.timestamp,
-            },
-          });
+        await queryRunner.startTransaction('SERIALIZABLE');
+
+        const Quote = await queryRunner.manager.findOne(QuoteEntity, {
+          where: {
+            name: createQuoteInput.name,
+            timestamp: createQuoteInput.timestamp,
+          },
+        });
 
         if (Quote != null) {
-          await this.dataSourceManager.getManager().update(
+          await queryRunner.manager.update(
             QuoteEntity,
             {
               name: createQuoteInput.name,
@@ -200,28 +232,49 @@ export class QuotesService {
           });
         }
 
-        await this.dataSourceManager.commitTransaction();
+        await queryRunner.commitTransaction();
+        await queryRunner.release();
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        await this.dataSourceManager.checkForThrowingError(error, attempt);
+        if (error instanceof BadRequestException) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw error;
+        }
 
-        await this.dataSourceManager.rollbackAndWait(attempt);
+        if (error.code != '40001' && error.code != '23505') {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new DatabaseException();
+        }
+
+        if (attempt > this.maxAttempts) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new RequestLimitException();
+        }
+
+        await queryRunner.rollbackTransaction();
+        attempt += 1;
+
+        await new Promise((resolve) => setTimeout(resolve, this.delayMs));
       }
     }
     return createQuoteInput;
   }
 
   async deleteQuote(name: string, timestamp: number): Promise<QuoteModel> {
-    await this.dataSourceManager.startConnection();
-    let Quote;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
     let attempt = 0;
+    let Quote;
 
     while (true) {
       try {
-        await this.dataSourceManager.startTransaction();
+        await queryRunner.startTransaction('SERIALIZABLE');
 
-        Quote = await this.dataSourceManager.getManager().findOne(QuoteEntity, {
+        Quote = await queryRunner.manager.findOne(QuoteEntity, {
           where: {
             name: name,
             timestamp: timestamp,
@@ -233,19 +286,37 @@ export class QuotesService {
             description: "You can't delete quote which doesn't exist",
           });
         } else {
-          await this.dataSourceManager
-            .getManager()
-            .delete(QuoteEntity, { ...Quote });
+          await queryRunner.manager.delete(QuoteEntity, { ...Quote });
         }
 
-        await this.dataSourceManager.commitTransaction();
+        await queryRunner.commitTransaction();
+        await queryRunner.release();
 
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        await this.dataSourceManager.checkForThrowingError(error, attempt);
+        if (error instanceof BadRequestException) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw error;
+        }
 
-        await this.dataSourceManager.rollbackAndWait(attempt);
+        if (error.code != '40001' && error.code != '23505') {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new DatabaseException();
+        }
+
+        if (attempt > this.maxAttempts) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new RequestLimitException();
+        }
+
+        await queryRunner.rollbackTransaction();
+        attempt += 1;
+
+        await new Promise((resolve) => setTimeout(resolve, this.delayMs));
       }
     }
     return Quote;

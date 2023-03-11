@@ -8,8 +8,6 @@ import { TickersModule } from './Tickers/Tickers.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { QuoteEntity } from './Quotes/entities/Quote.entity';
 import { TickerEntity } from './Tickers/entities/Ticker.entity';
-import { DataSourceManager } from './common/DataSourceManager';
-import { DataSource } from 'typeorm';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -40,10 +38,6 @@ import { DataSource } from 'typeorm';
     QuotesModule,
 
     TickersModule,
-
-    DataSourceManager,
   ],
 })
-export class AppModule {
-  constructor(private dataSource: DataSource) {}
-}
+export class AppModule {}

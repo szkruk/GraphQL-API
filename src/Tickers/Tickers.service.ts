@@ -2,49 +2,45 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { DatabaseException } from '../common/Database.exception';
-import { DataSourceManager } from '../common/DataSourceManager';
+import { RequestLimitException } from '../common/Request-Limit.exception';
 import { CreateTickerInput } from './dto/Create-Ticker.input';
 import { TickerEntity } from './entities/Ticker.entity';
 import { TickerModel } from './model/Ticker.model';
 
 @Injectable()
 export class TickersService {
-  private dataSourceManager: DataSourceManager;
-
-  constructor(private readonly dataSource: DataSource) {
-    this.dataSourceManager = new DataSourceManager(dataSource);
-  }
+  constructor(private readonly dataSource: DataSource) {}
   private readonly maxAttempts = 5;
   private readonly delayMs = 1000;
 
   async findAll(): Promise<TickerModel[]> {
-    await this.dataSourceManager.startConnection();
-    try {
-      const Tickers = await this.dataSourceManager
-        .getManager()
-        .find(TickerEntity);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
-      await this.dataSourceManager.releaseConnection();
+    try {
+      const Tickers = await queryRunner.manager.find(TickerEntity);
+
+      await queryRunner.manager.release();
 
       return Tickers;
     } catch {
-      await this.dataSourceManager.releaseConnection();
+      await queryRunner.manager.release();
 
       throw new DatabaseException();
     }
   }
 
   async create(createTickerInput: CreateTickerInput): Promise<TickerModel> {
-    await this.dataSourceManager.startConnection();
-
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
     let attempt = 0;
 
     while (true) {
       try {
-        await this.dataSourceManager.startTransaction();
+        await queryRunner.startTransaction('SERIALIZABLE');
 
         if (
-          (await this.dataSourceManager.getManager().findOne(TickerEntity, {
+          (await queryRunner.manager.findOne(TickerEntity, {
             where: {
               name: createTickerInput.name,
             },
@@ -56,83 +52,124 @@ export class TickersService {
           });
         }
 
-        await this.dataSourceManager.getManager().insert(TickerEntity, {
+        await queryRunner.manager.insert(TickerEntity, {
           ...createTickerInput,
         });
 
-        await this.dataSourceManager.commitTransaction();
+        await queryRunner.commitTransaction();
+        await queryRunner.release();
 
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        await this.dataSourceManager.checkForThrowingError(error, attempt);
+        if (error instanceof BadRequestException) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw error;
+        }
 
-        await this.dataSourceManager.rollbackAndWait(attempt);
+        if (error.code != '40001' && error.code != '23505') {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new DatabaseException();
+        }
+
+        if (attempt > this.maxAttempts) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new RequestLimitException();
+        }
+
+        await queryRunner.rollbackTransaction();
+        attempt += 1;
+
+        await new Promise((resolve) => setTimeout(resolve, this.delayMs));
       }
     }
     return createTickerInput;
   }
 
   async findOne(name: string): Promise<TickerModel> {
-    await this.dataSourceManager.startConnection();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
     try {
-      const Ticker = await this.dataSourceManager
-        .getManager()
-        .findOne(TickerEntity, {
-          where: {
-            name: name,
-          },
-        });
+      const Ticker = await queryRunner.manager.findOne(TickerEntity, {
+        where: {
+          name: name,
+        },
+      });
       if (Ticker == null) {
         throw new BadRequestException('Ticker not found', {
           description: 'Ticker with this name doesnt exist',
         });
       }
 
-      await this.dataSourceManager.releaseConnection();
+      await queryRunner.manager.release();
 
       return Ticker;
     } catch (error) {
-      await this.dataSourceManager.throwDatabaseorBadRequestException(error);
+      await queryRunner.release();
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else {
+        throw new DatabaseException();
+      }
     }
   }
 
   async deleteTicker(name: string): Promise<TickerModel> {
-    await this.dataSourceManager.startConnection();
-    let Ticker;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
     let attempt = 0;
+    let Ticker;
 
     while (true) {
       try {
-        await this.dataSourceManager.startTransaction();
+        await queryRunner.startTransaction('SERIALIZABLE');
 
-        Ticker = await this.dataSourceManager
-          .getManager()
-          .findOne(TickerEntity, {
-            where: {
-              name: name,
-            },
-          });
+        Ticker = await queryRunner.manager.findOne(TickerEntity, {
+          where: {
+            name: name,
+          },
+        });
 
         if (Ticker == null) {
           throw new BadRequestException('Value not founded', {
             description: 'There is not ticker with this name.',
           });
         } else {
-          await this.dataSourceManager
-            .getManager()
-            .delete(TickerEntity, { ...Ticker });
+          await queryRunner.manager.delete(TickerEntity, { ...Ticker });
         }
 
-        await this.dataSourceManager.commitTransaction();
+        await queryRunner.commitTransaction();
+        await queryRunner.release();
 
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        await this.dataSourceManager.checkForThrowingError(error, attempt);
+        if (error instanceof BadRequestException) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw error;
+        }
 
-        await this.dataSourceManager.rollbackAndWait(attempt);
+        if (error.code != '40001' && error.code != '23505') {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new DatabaseException();
+        }
+
+        if (attempt > this.maxAttempts) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new RequestLimitException();
+        }
+
+        await queryRunner.rollbackTransaction();
+        attempt += 1;
+
+        await new Promise((resolve) => setTimeout(resolve, this.delayMs));
       }
     }
 
@@ -142,24 +179,22 @@ export class TickersService {
   async updateTicker(
     createTickerInput: CreateTickerInput,
   ): Promise<TickerModel> {
-    await this.dataSourceManager.startConnection();
-
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
     let attempt = 0;
 
     while (true) {
       try {
-        await this.dataSourceManager.startTransaction();
+        await queryRunner.startTransaction('SERIALIZABLE');
 
-        const Ticker = await this.dataSourceManager
-          .getManager()
-          .findOne(TickerEntity, {
-            where: {
-              name: createTickerInput.name,
-            },
-          });
+        const Ticker = await queryRunner.manager.findOne(TickerEntity, {
+          where: {
+            name: createTickerInput.name,
+          },
+        });
 
         if (Ticker != null) {
-          await this.dataSourceManager.getManager().update(
+          await queryRunner.manager.update(
             TickerEntity,
             {
               name: createTickerInput.name,
@@ -172,14 +207,34 @@ export class TickersService {
           });
         }
 
-        await this.dataSourceManager.commitTransaction();
+        await queryRunner.commitTransaction();
+        await queryRunner.release();
 
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        await this.dataSourceManager.checkForThrowingError(error, attempt);
+        if (error instanceof BadRequestException) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw error;
+        }
 
-        await this.dataSourceManager.rollbackAndWait(attempt);
+        if (error.code != '40001' && error.code != '23505') {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new DatabaseException();
+        }
+
+        if (attempt > this.maxAttempts) {
+          await queryRunner.rollbackTransaction();
+          await queryRunner.release();
+          throw new RequestLimitException();
+        }
+
+        await queryRunner.rollbackTransaction();
+        attempt += 1;
+
+        await new Promise((resolve) => setTimeout(resolve, this.delayMs));
       }
     }
 

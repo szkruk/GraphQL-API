@@ -170,12 +170,12 @@ describe('QuotesService', () => {
     it('Should return quotes with same timestamp', async () => {
       expect(Quotes).toEqual([
         {
-          name: 'INTC',
+          name: 'TSL',
           timestamp: 123,
           price: 12.3,
         },
         {
-          name: 'TSL',
+          name: 'INTC',
           timestamp: 123,
           price: 12.3,
         },
