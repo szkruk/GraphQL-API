@@ -170,12 +170,12 @@ describe('QuotesService', () => {
     it('Should return quotes with same timestamp', async () => {
       expect(Quotes).toEqual([
         {
-          name: 'TSL',
+          name: 'INTC',
           timestamp: 123,
           price: 12.3,
         },
         {
-          name: 'INTC',
+          name: 'TSL',
           timestamp: 123,
           price: 12.3,
         },
@@ -249,6 +249,12 @@ describe('QuotesService', () => {
 
     it('Should return a quote', () => {
       expect(Quote).toEqual(createQuote);
+    });
+
+    it('Should return a created quote', async () => {
+      await expect(
+        service.findOne(createQuote.name, createQuote.timestamp),
+      ).resolves.toEqual(createQuote);
     });
 
     it('Should return a error', async () => {

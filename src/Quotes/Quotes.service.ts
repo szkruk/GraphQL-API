@@ -1,11 +1,12 @@
+/* eslint-disable prefer-const */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { TickerEntity } from '../Tickers/entities/Ticker.entity';
 import { CreateQuoteInput } from './dto/Create-Quote.input';
 import { QuoteEntity } from './entities/Quote.entity';
 import { QuoteModel } from './model/Quote.model';
-import { DatabaseException } from '../common/database.exception';
+import { DatabaseException } from '../common/Database.exception';
 import { TickerModel } from '../Tickers/model/Ticker.model';
-import { DataSourceManager } from '../common/transaction';
+import { DataSourceManager } from '../common/DataSourceManager';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -15,6 +16,8 @@ export class QuotesService {
   constructor(private readonly dataSource: DataSource) {
     this.dataSourceManager = new DataSourceManager(dataSource);
   }
+  private readonly maxAttempts = 5;
+  private readonly delayMs = 1000;
 
   async findAll(): Promise<QuoteModel[]> {
     await this.dataSourceManager.startConnection();
@@ -57,13 +60,7 @@ export class QuotesService {
 
       return Quote;
     } catch (error) {
-      await this.dataSourceManager.releaseConnection();
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      } else {
-        throw new DatabaseException();
-      }
+      await this.dataSourceManager.throwDatabaseorBadRequestException(error);
     }
   }
 
@@ -86,13 +83,7 @@ export class QuotesService {
 
       return quotes;
     } catch (error) {
-      await this.dataSourceManager.releaseConnection();
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      } else {
-        throw new DatabaseException();
-      }
+      await this.dataSourceManager.throwDatabaseorBadRequestException(error);
     }
   }
 
@@ -122,139 +113,141 @@ export class QuotesService {
 
       return qoutes;
     } catch (error) {
-      await this.dataSourceManager.releaseConnection();
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      } else {
-        throw new DatabaseException();
-      }
+      await this.dataSourceManager.throwDatabaseorBadRequestException(error);
     }
   }
 
   async createQuote(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
-    await this.dataSourceManager.startTransaction();
+    await this.dataSourceManager.startConnection();
 
-    try {
-      if (
-        (await this.dataSourceManager.getManager().findOne(QuoteEntity, {
-          where: {
+    let attempt = 0;
+
+    while (true) {
+      try {
+        await this.dataSourceManager.startTransaction();
+
+        if (
+          (await this.dataSourceManager.getManager().findOne(QuoteEntity, {
+            where: {
+              name: createQuoteInput.name,
+              timestamp: createQuoteInput.timestamp,
+            },
+          })) != null
+        ) {
+          throw new BadRequestException('Qoute already exists', {
+            description: 'There is a quote with same name and timestamp.',
+          });
+        }
+        if (
+          (await this.dataSourceManager.getManager().findOne(TickerEntity, {
+            where: {
+              name: createQuoteInput.name,
+            },
+          })) == null
+        ) {
+          await this.dataSourceManager.getManager().insert(TickerEntity, {
             name: createQuoteInput.name,
-            timestamp: createQuoteInput.timestamp,
-          },
-        })) != null
-      ) {
-        throw new BadRequestException('Qoute already exists', {
-          description: 'There is a quote with same name and timestamp.',
+            fullName: 'unknown',
+          });
+        }
+
+        await this.dataSourceManager.getManager().insert(QuoteEntity, {
+          ...createQuoteInput,
         });
-      }
-      if (
-        (await this.dataSourceManager.getManager().findOne(TickerEntity, {
-          where: {
-            name: createQuoteInput.name,
-          },
-        })) == null
-      ) {
-        await this.dataSourceManager.getManager().insert(TickerEntity, {
-          name: createQuoteInput.name,
-          fullName: 'unknown',
-        });
-      }
 
-      await this.dataSourceManager.getManager().insert(QuoteEntity, {
-        ...createQuoteInput,
-      });
+        await this.dataSourceManager.commitTransaction();
+        // If transactian was succesfull loop is broken
+        break;
+      } catch (error) {
+        await this.dataSourceManager.checkForThrowingError(error, attempt);
 
-      await this.dataSourceManager.commitTransaction();
-
-      return createQuoteInput;
-    } catch (error) {
-      await this.dataSourceManager.rollbackTransaction();
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      } else {
-        throw new DatabaseException();
+        await this.dataSourceManager.rollbackAndWait(attempt);
       }
     }
+
+    return createQuoteInput;
   }
 
   async update(createQuoteInput: CreateQuoteInput): Promise<QuoteModel> {
-    await this.dataSourceManager.startTransaction();
+    await this.dataSourceManager.startConnection();
 
-    try {
-      const Quote = await this.dataSourceManager
-        .getManager()
-        .findOne(QuoteEntity, {
-          where: {
-            name: createQuoteInput.name,
-            timestamp: createQuoteInput.timestamp,
-          },
-        });
+    let attempt = 0;
 
-      if (Quote != null) {
-        await this.dataSourceManager.getManager().update(
-          QuoteEntity,
-          {
-            name: createQuoteInput.name,
-            timestamp: createQuoteInput.timestamp,
-          },
-          { ...createQuoteInput },
-        );
-      } else {
-        throw new BadRequestException("Quote doesn't exists", {
-          description: "Quote with this name and timestamp doesn't exists.",
-        });
-      }
+    while (true) {
+      try {
+        await this.dataSourceManager.startTransaction();
+        const Quote = await this.dataSourceManager
+          .getManager()
+          .findOne(QuoteEntity, {
+            where: {
+              name: createQuoteInput.name,
+              timestamp: createQuoteInput.timestamp,
+            },
+          });
 
-      await this.dataSourceManager.commitTransaction();
+        if (Quote != null) {
+          await this.dataSourceManager.getManager().update(
+            QuoteEntity,
+            {
+              name: createQuoteInput.name,
+              timestamp: createQuoteInput.timestamp,
+            },
+            { ...createQuoteInput },
+          );
+        } else {
+          throw new BadRequestException("Quote doesn't exists", {
+            description: "Quote with this name and timestamp doesn't exists.",
+          });
+        }
 
-      return createQuoteInput;
-    } catch (error) {
-      await this.dataSourceManager.rollbackTransaction();
+        await this.dataSourceManager.commitTransaction();
+        // If transactian was succesfull loop is broken
+        break;
+      } catch (error) {
+        await this.dataSourceManager.checkForThrowingError(error, attempt);
 
-      if (error instanceof BadRequestException) {
-        throw error;
-      } else {
-        throw new DatabaseException();
+        await this.dataSourceManager.rollbackAndWait(attempt);
       }
     }
+    return createQuoteInput;
   }
 
   async deleteQuote(name: string, timestamp: number): Promise<QuoteModel> {
-    const queryRunner = await this.dataSourceManager.startTransaction();
+    await this.dataSourceManager.startConnection();
+    let Quote;
+    let attempt = 0;
 
-    try {
-      const Quote = await this.dataSourceManager
-        .getManager()
-        .findOne(QuoteEntity, {
+    while (true) {
+      try {
+        await this.dataSourceManager.startTransaction();
+
+        Quote = await this.dataSourceManager.getManager().findOne(QuoteEntity, {
           where: {
             name: name,
             timestamp: timestamp,
           },
         });
 
-      if (Quote == null) {
-        throw new BadRequestException("Quote doesn't exists", {
-          description: "You can't delete quote which doesn't exist",
-        });
-      } else {
-        await this.dataSourceManager
-          .getManager()
-          .delete(QuoteEntity, { ...Quote });
-      }
+        if (Quote == null) {
+          throw new BadRequestException("Quote doesn't exists", {
+            description: "You can't delete quote which doesn't exist",
+          });
+        } else {
+          await this.dataSourceManager
+            .getManager()
+            .delete(QuoteEntity, { ...Quote });
+        }
 
-      await this.dataSourceManager.commitTransaction();
+        await this.dataSourceManager.commitTransaction();
 
-      return Quote;
-    } catch (error) {
-      await this.dataSourceManager.rollbackTransaction();
+        // If transactian was succesfull loop is broken
+        break;
+      } catch (error) {
+        await this.dataSourceManager.checkForThrowingError(error, attempt);
 
-      if (error instanceof BadRequestException) {
-        throw error;
-      } else {
-        throw new DatabaseException();
+        await this.dataSourceManager.rollbackAndWait(attempt);
       }
     }
+    return Quote;
   }
 }
