@@ -1,7 +1,7 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CreateTickerInput } from './dto/Create-Ticker.input';
 import { TickerEntity } from './entities/Ticker.entity';
 import { TickerModel } from './model/Ticker.model';
@@ -9,8 +9,7 @@ import { TickersService } from './Tickers.service';
 
 describe('TickersService', () => {
   let service: TickersService;
-
-  let repository: Repository<TickerEntity>;
+  let dataSource: DataSource;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -40,22 +39,19 @@ describe('TickersService', () => {
       providers: [TickersService, TickerEntity],
     }).compile();
 
-    repository = module.get<Repository<TickerEntity>>(
-      getRepositoryToken(TickerEntity),
-    );
+    dataSource = module.get<DataSource>(DataSource);
+
     service = module.get<TickersService>(TickersService);
   });
 
   async function clearDB() {
-    const connection = repository.manager.connection;
-
-    const queryRunner = connection.createQueryRunner();
-
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
     await queryRunner.startTransaction('SERIALIZABLE');
 
-    const entities = connection.entityMetadatas;
+    const entities = dataSource.entityMetadatas;
     for (const entity of entities) {
-      const repository = connection.getRepository(entity.name);
+      const repository = dataSource.getRepository(entity.name);
 
       await repository.query(`TRUNCATE TABLE "${entity.tableName}" CASCADE;`);
     }
@@ -79,7 +75,7 @@ describe('TickersService', () => {
   });
 
   it('should be defined', () => {
-    expect(repository).toBeDefined();
+    expect(dataSource).toBeDefined();
   });
 
   describe('create a Ticker', () => {

@@ -170,7 +170,7 @@ export class QuotesService {
         });
         await queryRunner.commitTransaction();
         await queryRunner.release();
-        // If transactian was succesfull loop is broken
+        // If transaction was succesfull loop is broken
         break;
       } catch (error) {
         if (error instanceof BadRequestException) {

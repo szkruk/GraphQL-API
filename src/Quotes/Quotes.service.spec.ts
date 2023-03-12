@@ -1,7 +1,7 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { TickerEntity } from '../Tickers/entities/Ticker.entity';
 import { TickersModule } from '../Tickers/Tickers.module';
 import { CreateQuoteInput } from './dto/Create-Quote.input';
@@ -11,9 +11,7 @@ import { QuotesService } from './Quotes.service';
 
 describe('QuotesService', () => {
   let service: QuotesService;
-
-  let repository: Repository<QuoteEntity>;
-
+  let dataSource: DataSource;
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
@@ -43,24 +41,20 @@ describe('QuotesService', () => {
       providers: [QuotesService, QuoteEntity],
     }).compile();
 
-    repository = module.get<Repository<QuoteEntity>>(
-      getRepositoryToken(QuoteEntity),
-    );
+    dataSource = module.get<DataSource>(DataSource);
 
     service = module.get<QuotesService>(QuotesService);
   });
 
   async function clearDB() {
-    const connection = repository.manager.connection;
-
-    const queryRunner = connection.createQueryRunner();
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
 
     await queryRunner.startTransaction('SERIALIZABLE');
 
-    const entities = connection.entityMetadatas;
+    const entities = dataSource.entityMetadatas;
     for (const entity of entities) {
-      const repository = connection.getRepository(entity.name);
-
+      const repository = dataSource.getRepository(entity.name);
       await repository.query(`TRUNCATE TABLE "${entity.tableName}" CASCADE;`);
     }
 
@@ -79,12 +73,28 @@ describe('QuotesService', () => {
     });
   }
 
+  async function insertDelayed(newQ: CreateQuoteInput, delayMs: number) {
+    const queryRunner = dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction('SERIALIZABLE');
+
+    await queryRunner.manager.insert(QuoteEntity, newQ);
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+    await queryRunner.commitTransaction();
+
+    await queryRunner.release();
+  }
+
   it('Should be defined', () => {
     expect(service).toBeDefined();
   });
 
   it('Should be defined', () => {
-    expect(repository).toBeDefined();
+    expect(dataSource).toBeDefined();
   });
 
   describe('Get all quotes', () => {
@@ -261,6 +271,78 @@ describe('QuotesService', () => {
       await expect(service.createQuote(createQuote)).rejects.toThrow(
         'Qoute already exists',
       );
+    });
+
+    it('Ticker shouldnt exist', async () => {
+      expect(
+        await dataSource.manager.findOne(TickerEntity, {
+          where: {
+            name: 'SEE',
+          },
+        }),
+      ).toEqual(null);
+    });
+
+    it('Should create a new Ticker and Quote', async () => {
+      const newQuote: CreateQuoteInput = {
+        name: 'SEE',
+        timestamp: 124,
+        price: 21.3,
+      };
+
+      expect(await service.createQuote(newQuote)).toEqual(newQuote);
+    });
+
+    it('Ticker should be created', async () => {
+      expect(
+        await dataSource.manager.findOne(TickerEntity, {
+          where: {
+            name: 'SEE',
+          },
+        }),
+      ).toEqual({ fullName: 'unknown', name: 'SEE' });
+    });
+
+    it('Should return error, while concurently inserting same Quote', async () => {
+      const newQuote: CreateQuoteInput = {
+        name: 'TSL',
+        timestamp: 100,
+        price: 42000,
+      };
+
+      const resp = insertDelayed(newQuote, 1000);
+      await expect(service.createQuote(newQuote)).rejects.toThrow(
+        'Qoute already exists',
+      );
+    });
+
+    it('Should create Ticker, for first Quote and accept second Quote ', async () => {
+      const bitcoinQuote: CreateQuoteInput = {
+        name: 'BTC',
+        timestamp: 100,
+        price: 42000,
+      };
+
+      expect(
+        await dataSource.manager.findOne(TickerEntity, {
+          where: {
+            name: 'BTC',
+          },
+        }),
+      ).toEqual(null);
+
+      // Ticker is not created, so the response is Error
+      await expect(insertDelayed(bitcoinQuote, 1000)).rejects.toThrowError();
+
+      expect(await service.createQuote(bitcoinQuote)).toEqual(bitcoinQuote);
+
+      expect(
+        await dataSource.manager.findOne(TickerEntity, {
+          where: {
+            name: 'BTC',
+          },
+        }),
+      ).toEqual({ fullName: 'unknown', name: 'BTC' });
     });
   });
 
