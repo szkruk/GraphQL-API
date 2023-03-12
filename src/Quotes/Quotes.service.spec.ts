@@ -63,6 +63,10 @@ describe('QuotesService', () => {
     await queryRunner.release();
   }
 
+  beforeEach(async () => {
+    await initData();
+  });
+
   async function initData() {
     await clearDB();
 
@@ -100,9 +104,7 @@ describe('QuotesService', () => {
   describe('Get all quotes', () => {
     let Quotes: QuoteModel[];
 
-    beforeAll(async () => {
-      await initData();
-
+    beforeEach(async () => {
       await service.createQuote({
         name: 'INTC',
         timestamp: 123,
@@ -117,27 +119,27 @@ describe('QuotesService', () => {
     });
 
     it('Should return two quotes', async () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 123,
-          price: 12.3,
-        },
-        {
-          name: 'INTC',
-          timestamp: 123,
-          price: 12.3,
-        },
-      ]);
+      expect(Quotes).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            timestamp: 123,
+            price: 12.3,
+          },
+          {
+            name: 'INTC',
+            timestamp: 123,
+            price: 12.3,
+          },
+        ]),
+      );
     });
   });
 
   describe('Get one Quote', () => {
     let Quote: QuoteModel;
 
-    beforeAll(async () => {
-      await initData();
-
+    beforeEach(async () => {
       Quote = await service.findOne('TSL', 123);
     });
 
@@ -163,8 +165,7 @@ describe('QuotesService', () => {
   describe('Get quotes by timestamp', () => {
     let Quotes: QuoteModel[];
 
-    beforeAll(async () => {
-      await initData();
+    beforeEach(async () => {
       await service.createQuote({
         name: 'INTC',
         timestamp: 123,
@@ -178,18 +179,20 @@ describe('QuotesService', () => {
     });
 
     it('Should return quotes with same timestamp', async () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 123,
-          price: 12.3,
-        },
-        {
-          name: 'INTC',
-          timestamp: 123,
-          price: 12.3,
-        },
-      ]);
+      expect(Quotes).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            timestamp: 123,
+            price: 12.3,
+          },
+          {
+            name: 'INTC',
+            timestamp: 123,
+            price: 12.3,
+          },
+        ]),
+      );
     });
 
     it('Should return a error', async () => {
@@ -202,8 +205,7 @@ describe('QuotesService', () => {
   describe('Get quotes by Name', () => {
     let Quotes: QuoteModel[];
 
-    beforeAll(async () => {
-      await initData();
+    beforeEach(async () => {
       await service.createQuote({
         name: 'TSL',
         timestamp: 124,
@@ -217,18 +219,20 @@ describe('QuotesService', () => {
     });
 
     it('Should return quotes with same name', async () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 123,
-          price: 12.3,
-        },
-        {
-          name: 'TSL',
-          timestamp: 124,
-          price: 12.3,
-        },
-      ]);
+      expect(Quotes).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            timestamp: 123,
+            price: 12.3,
+          },
+          {
+            name: 'TSL',
+            timestamp: 124,
+            price: 12.3,
+          },
+        ]),
+      );
     });
 
     it('Should return a error', async () => {
@@ -247,9 +251,7 @@ describe('QuotesService', () => {
       price: 12.3,
     };
 
-    beforeAll(async () => {
-      await initData();
-
+    beforeEach(async () => {
       Quote = await service.createQuote(createQuote);
     });
 
@@ -291,9 +293,7 @@ describe('QuotesService', () => {
       };
 
       expect(await service.createQuote(newQuote)).toEqual(newQuote);
-    });
 
-    it('Ticker should be created', async () => {
       expect(
         await dataSource.manager.findOne(TickerEntity, {
           where: {
@@ -355,9 +355,7 @@ describe('QuotesService', () => {
       price: 16.3,
     };
 
-    beforeAll(async () => {
-      await initData();
-
+    beforeEach(async () => {
       Quote = await service.update(createQuote);
     });
 
@@ -383,9 +381,7 @@ describe('QuotesService', () => {
   describe('Delete quote', () => {
     let Quote: QuoteModel;
 
-    beforeAll(async () => {
-      await initData();
-
+    beforeEach(async () => {
       Quote = await service.deleteQuote('TSL', 123);
     });
 

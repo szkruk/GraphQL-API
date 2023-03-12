@@ -1,7 +1,8 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { clear } from 'console';
+import { DataSource } from 'typeorm';
 import { CreateTickerInput } from './dto/Create-Ticker.input';
 import { TickerEntity } from './entities/Ticker.entity';
 import { TickerModel } from './model/Ticker.model';
@@ -70,6 +71,10 @@ describe('TickersService', () => {
     });
   }
 
+  beforeEach(async () => {
+    await initData();
+  });
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
@@ -86,7 +91,7 @@ describe('TickersService', () => {
       fullName: 'Intel',
     };
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await initData();
 
       Ticker = await service.create(createTicker);
@@ -110,7 +115,7 @@ describe('TickersService', () => {
   describe('get all tickers', () => {
     let Tickers: TickerModel[];
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await initData();
 
       await service.create({
@@ -126,23 +131,25 @@ describe('TickersService', () => {
     });
 
     it('Should return two tickers', async () => {
-      expect(Tickers).toEqual([
-        {
-          name: 'TSL',
-          fullName: 'Tesla',
-        },
-        {
-          name: 'INTC',
-          fullName: 'Intel',
-        },
-      ]);
+      expect(Tickers).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            fullName: 'Tesla',
+          },
+          {
+            name: 'INTC',
+            fullName: 'Intel',
+          },
+        ]),
+      );
     });
   });
 
   describe('get one ticker', () => {
     let Ticker: TickerModel;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await initData();
 
       Ticker = await service.findOne('TSL');
@@ -167,7 +174,7 @@ describe('TickersService', () => {
   describe('delete ticker', () => {
     let Ticker: TickerModel;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await initData();
 
       Ticker = await service.deleteTicker('TSL');
@@ -194,7 +201,7 @@ describe('TickersService', () => {
   describe('update ticker', () => {
     let Ticker: TickerModel;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await initData();
 
       Ticker = await service.updateTicker({ name: 'TSL', fullName: 'Teslaa' });

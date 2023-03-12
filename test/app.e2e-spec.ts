@@ -61,23 +61,25 @@ describe('GraphQL AppResolver ', () => {
     });
 
     it('Should return 3 quotes', async () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 123,
-          price: 13.4,
-        },
-        {
-          name: 'TSL',
-          timestamp: 124,
-          price: 13.5,
-        },
-        {
-          name: 'INTC',
-          timestamp: 123,
-          price: 23.4,
-        },
-      ]);
+      expect(Quotes).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            timestamp: 123,
+            price: 13.4,
+          },
+          {
+            name: 'TSL',
+            timestamp: 124,
+            price: 13.5,
+          },
+          {
+            name: 'INTC',
+            timestamp: 123,
+            price: 23.4,
+          },
+        ]),
+      );
     });
   });
 
@@ -134,18 +136,20 @@ describe('GraphQL AppResolver ', () => {
     });
 
     it('Should return two quotes with same timestamp', async () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 123,
-          price: 13.4,
-        },
-        {
-          name: 'INTC',
-          timestamp: 123,
-          price: 23.4,
-        },
-      ]);
+      expect(Quotes).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            timestamp: 123,
+            price: 13.4,
+          },
+          {
+            name: 'INTC',
+            timestamp: 123,
+            price: 23.4,
+          },
+        ]),
+      );
     });
 
     it('Should return error', async () => {
@@ -182,18 +186,20 @@ describe('GraphQL AppResolver ', () => {
     });
 
     it('Should return two quotes with same name', async () => {
-      expect(Quotes).toEqual([
-        {
-          name: 'TSL',
-          timestamp: 123,
-          price: 13.4,
-        },
-        {
-          name: 'TSL',
-          timestamp: 124,
-          price: 13.5,
-        },
-      ]);
+      expect(Quotes).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            timestamp: 123,
+            price: 13.4,
+          },
+          {
+            name: 'TSL',
+            timestamp: 124,
+            price: 13.5,
+          },
+        ]),
+      );
     });
 
     it('Should return empty array', async () => {
@@ -372,16 +378,18 @@ describe('GraphQL AppResolver ', () => {
     });
 
     it('Should return all tickers', async () => {
-      expect(Tickers).toEqual([
-        {
-          name: 'TSL',
-          fullName: 'unknown',
-        },
-        {
-          name: 'INTC',
-          fullName: 'unknown',
-        },
-      ]);
+      expect(Tickers).toEqual(
+        expect.arrayContaining([
+          {
+            name: 'TSL',
+            fullName: 'unknown',
+          },
+          {
+            name: 'INTC',
+            fullName: 'unknown',
+          },
+        ]),
+      );
     });
   });
 

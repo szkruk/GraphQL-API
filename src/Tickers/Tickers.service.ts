@@ -2,7 +2,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { DatabaseException } from '../common/Database.exception';
-import { RequestLimitException } from '../common/Request-Limit.exception';
+import {
+  checkIfErrorOccurs,
+  throwBadRequestOrDatabaseError,
+} from '../common/ErrorHandling';
 import { CreateTickerInput } from './dto/Create-Ticker.input';
 import { TickerEntity } from './entities/Ticker.entity';
 import { TickerModel } from './model/Ticker.model';
@@ -10,7 +13,6 @@ import { TickerModel } from './model/Ticker.model';
 @Injectable()
 export class TickersService {
   constructor(private readonly dataSource: DataSource) {}
-  private readonly maxAttempts = 5;
   private readonly delayMs = 1000;
 
   async findAll(): Promise<TickerModel[]> {
@@ -62,23 +64,7 @@ export class TickersService {
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        if (error instanceof BadRequestException) {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw error;
-        }
-
-        if (error.code != '40001' && error.code != '23505') {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw new DatabaseException();
-        }
-
-        if (attempt > this.maxAttempts) {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw new RequestLimitException();
-        }
+        await checkIfErrorOccurs(queryRunner, error, attempt);
 
         await queryRunner.rollbackTransaction();
         attempt += 1;
@@ -110,11 +96,7 @@ export class TickersService {
       return Ticker;
     } catch (error) {
       await queryRunner.release();
-      if (error instanceof BadRequestException) {
-        throw error;
-      } else {
-        throw new DatabaseException();
-      }
+      await throwBadRequestOrDatabaseError(error);
     }
   }
 
@@ -148,23 +130,7 @@ export class TickersService {
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        if (error instanceof BadRequestException) {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw error;
-        }
-
-        if (error.code != '40001' && error.code != '23505') {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw new DatabaseException();
-        }
-
-        if (attempt > this.maxAttempts) {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw new RequestLimitException();
-        }
+        await checkIfErrorOccurs(queryRunner, error, attempt);
 
         await queryRunner.rollbackTransaction();
         attempt += 1;
@@ -213,23 +179,7 @@ export class TickersService {
         // If transactian was succesfull loop is broken
         break;
       } catch (error) {
-        if (error instanceof BadRequestException) {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw error;
-        }
-
-        if (error.code != '40001' && error.code != '23505') {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw new DatabaseException();
-        }
-
-        if (attempt > this.maxAttempts) {
-          await queryRunner.rollbackTransaction();
-          await queryRunner.release();
-          throw new RequestLimitException();
-        }
+        await checkIfErrorOccurs(queryRunner, error, attempt);
 
         await queryRunner.rollbackTransaction();
         attempt += 1;
